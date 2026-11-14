@@ -77,7 +77,7 @@ Each indicator is linked to one or more of the five hazards of human spaceflight
 |---|---|---|
 | `head` | Mood, Sleep | Isolation and confinement |
 | `heart` | Blood pressure, Heart rate | Gravity fields; space radiation |
-| `abdomen` | Blood glucose | Distance from Earth (nutrition: no resupply) |
+| `abdomen` | Blood glucose | Distance from Earth (nutrition: no resupply); gravity fields (kidney stone risk) |
 | `core` | Body temperature | Hostile/closed environments (immune changes) |
 | `bones` | none (information only) | Gravity fields (bone and muscle loss) |
 | `whole-body` | Radiation exposure panel | Space radiation |

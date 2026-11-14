@@ -149,7 +149,8 @@ export default function About() {
         <h3 className="mt-2 font-semibold">NASA pages behind the spaceflight context</h3>
         <p className="text-sm text-muted">
           The statements in the body map and below paraphrase these pages and are bundled with the app. They
-          were drafted with Claude (see Use of AI below). Each statement links to its page.
+          were drafted with Claude (see Use of AI below) and checked against their source pages by our team on 14 Nov
+          2026. Each statement links to its page.
         </p>
         <ul className="flex flex-col gap-1">
           {Object.values(SOURCES).map((s) => (
@@ -182,7 +183,7 @@ export default function About() {
           <li>Claude drafted the interface text and the self-care steps.</li>
           <li>
             Claude drafted the paraphrases of NASA pages shown in the body map and on this page, working from the
-            page linked beside each statement.
+            page linked beside each statement. Our team checked each one against its source page on 14 Nov 2026.
           </li>
           <li>
             Claude also drafted the team's design rationale texts ("Why we track this" in the body map and "How the
@@ -193,6 +194,7 @@ export default function About() {
             guidance (review completed 14 Nov 2026).
           </li>
           <li>The body map figure is a schematic drawn in code with AI assistance.</li>
+          <li>The browser-tab icon (a pulse line crossing a ring) is an original mark drawn in code with AI assistance.</li>
           <li>No images were generated with AI, and the app uses no NASA logos, insignia or mission patches.</li>
           <li>
             The app itself uses no AI: statuses, alerts and guidance come from fixed rules that the team can read

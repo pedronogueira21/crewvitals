@@ -27,7 +27,7 @@ There is no login and no account. Health entries stay in the browser (localStora
 
 Space weather data: NASA CCMC DONKI.
 
-The spaceflight context text in `src/content/evidence.json` paraphrases these NASA pages (drafted with Claude; see [Use of AI](#use-of-ai)), and every statement in the app links to its page:
+The spaceflight context text in `src/content/evidence.json` paraphrases these NASA pages (drafted with Claude; see [Use of AI](#use-of-ai)). The team checked every paraphrase against its source page on 14 Nov 2026, and every statement in the app links to its page:
 
 - The Human Body in Space: https://www.nasa.gov/humans-in-space/the-human-body-in-space/
 - 5 Hazards of Human Spaceflight (NASA Human Research Program): https://www.nasa.gov/hrp/hazards
@@ -73,9 +73,10 @@ Cloudflare Pages, connected to this GitHub repository:
 - Claude (Anthropic) was used to plan the project and write its specification (`SPEC.md`).
 - The code was written with Claude Code (Anthropic's AI coding assistant) and reviewed by the team.
 - Claude drafted the interface text and the self-care steps.
-- Claude drafted the paraphrases of NASA pages in `src/content/evidence.json`, working from the page linked beside each statement.
+- Claude drafted the paraphrases of NASA pages in `src/content/evidence.json`, working from the page linked beside each statement. The team checked each one against its source page on 14 Nov 2026.
 - Claude also drafted the team's design rationale texts in `src/content/evidence.json` ("Why we track this" in the body map, "How the app escalates" on the About page). The app labels them as the team's rationale, drafted with Claude, and not NASA statements.
 - Body map figure. Schematic figure drawn in code with AI assistance.
+- The browser-tab icon (`public/favicon.svg`, a pulse line crossing a ring) is an original mark drawn in code with AI assistance.
 - No images were generated with AI, and the app uses no NASA logos, insignia or mission patches.
 - Gemini (Google) was used by the team's biomedical engineer as an aid when reviewing the thresholds and guidance (review completed 14 Nov 2026).
 - The app itself uses no AI: statuses, alerts and guidance come from fixed rules in `src/content/indicators.ts`.
