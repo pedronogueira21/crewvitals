@@ -104,7 +104,7 @@ export default function About() {
         <p>
           <span className="font-semibold">{REFERENCE_RANGE_LABEL}.</span> The green, yellow and red thresholds are
           terrestrial adult clinical reference ranges. They are not NASA flight rules and not limits defined for
-          spaceflight. The guidance and self-care steps are general wellness text written by our team.
+          spaceflight. The guidance and self-care steps are general wellness text, drafted with AI assistance (see Use of AI below).
         </p>
         <p>
           Data loaded with "Load demo mission" is simulated crew data, and is labelled "Simulated crew data"
@@ -146,8 +146,8 @@ export default function About() {
 
         <h3 className="mt-2 font-semibold">NASA pages behind the spaceflight context</h3>
         <p className="text-sm text-muted">
-          The statements in the body map and below are paraphrased by our team from these pages and bundled with
-          the app. Each statement links to its page.
+          The statements in the body map and below paraphrase these pages and are bundled with the app. They
+          were drafted with Claude (see Use of AI below). Each statement links to its page.
         </p>
         <ul className="flex flex-col gap-1">
           {Object.values(SOURCES).map((s) => (
@@ -170,9 +170,15 @@ export default function About() {
 
       <Section id="ai-heading" title="Use of AI">
         <ul className="flex list-disc flex-col gap-2 pl-5">
+          <li>Claude (Anthropic) was used to plan the project and write its specification.</li>
           <li>
             The app's code was written with Claude Code, Anthropic's AI coding assistant, and reviewed by our
             team.
+          </li>
+          <li>Claude drafted the interface text and the self-care steps.</li>
+          <li>
+            Claude drafted the paraphrases of NASA pages shown in the body map and on this page, working from the
+            page linked beside each statement.
           </li>
           <li>The body map figure is a schematic drawn in code with AI assistance.</li>
           <li>No images were generated with AI, and the app uses no NASA logos, insignia or mission patches.</li>

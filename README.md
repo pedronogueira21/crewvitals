@@ -2,6 +2,8 @@
 
 A web app that lets an astronaut on a long-duration mission self-assess their health, understand what each indicator means in spaceflight, and know what to do next. Built for the NASA Space Apps Challenge 2026, challenge "Create Health Monitoring Software for Astronauts on Space Missions".
 
+**Live site: https://crewvitals.pages.dev**
+
 > **This is a hackathon prototype, not a medical device.** Alert thresholds are terrestrial adult clinical reference ranges ("Reference range: adult clinical reference, Earth-based"), not NASA flight rules or spaceflight-specific limits. Crew data in the demo is simulated.
 
 ## What it does
@@ -25,7 +27,7 @@ There is no login and no account. Health entries stay in the browser (localStora
 
 Space weather data: NASA CCMC DONKI.
 
-The spaceflight context text in `src/content/evidence.json` is paraphrased by the team from these NASA pages, and every statement in the app links to its page:
+The spaceflight context text in `src/content/evidence.json` paraphrases these NASA pages (drafted with Claude; see [Use of AI](#use-of-ai)), and every statement in the app links to its page:
 
 - The Human Body in Space: https://www.nasa.gov/humans-in-space/the-human-body-in-space/
 - 5 Hazards of Human Spaceflight (NASA Human Research Program): https://www.nasa.gov/hrp/hazards
@@ -68,7 +70,10 @@ Cloudflare Pages, connected to this GitHub repository:
 
 ## Use of AI
 
+- Claude (Anthropic) was used to plan the project and write its specification (`SPEC.md`).
 - The code was written with Claude Code (Anthropic's AI coding assistant) and reviewed by the team.
+- Claude drafted the interface text and the self-care steps.
+- Claude drafted the paraphrases of NASA pages in `src/content/evidence.json`, working from the page linked beside each statement.
 - Body map figure. Schematic figure drawn in code with AI assistance.
 - No images were generated with AI, and the app uses no NASA logos, insignia or mission patches.
 - The app itself uses no AI: statuses, alerts and guidance come from fixed rules in `src/content/indicators.ts`.
