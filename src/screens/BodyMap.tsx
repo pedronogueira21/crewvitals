@@ -2,15 +2,32 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import BodyFigure, { REGION_STATE_UI } from '../components/BodyFigure'
 import type { RegionState } from '../components/BodyFigure'
+import RadiationPanel from '../components/RadiationPanel'
+import RelatedStudies from '../components/RelatedStudies'
 import SimulatedTag from '../components/SimulatedTag'
+import SpaceWeatherBanner from '../components/SpaceWeatherBanner'
 import StatusBadge from '../components/StatusBadge'
 import { HAZARDS, REGIONS, sourceOf } from '../content/evidence'
 import type { Region, RegionId, Statement } from '../content/evidence'
 import { INDICATORS, guidanceFor, readIndicator, worstStatus } from '../content/indicators'
 import type { Reading } from '../content/indicators'
 import { formatDate } from '../lib/mission'
+import type { StudyKeyword } from '../lib/nasa'
 import { useStore } from '../state/store'
 import type { Entry } from '../types'
+
+/** OSDR keyword per indicator (SPEC 6.2), grouped by body-map region. */
+const STUDY_TOPICS: Record<RegionId, { term: StudyKeyword; topic: string }[]> = {
+  head: [
+    { term: 'circadian', topic: 'Sleep' },
+    { term: 'behavior', topic: 'Mood' },
+  ],
+  heart: [{ term: 'cardiovascular', topic: 'Blood pressure and heart rate' }],
+  abdomen: [{ term: 'glucose', topic: 'Blood glucose' }],
+  core: [{ term: 'immune', topic: 'Body temperature' }],
+  bones: [{ term: 'bone loss', topic: 'Bones and muscles' }],
+  'whole-body': [{ term: 'radiation', topic: 'Radiation exposure' }],
+}
 
 function readingsFor(region: Region, latest: Entry | undefined): Reading[] {
   if (!latest) return []
@@ -153,6 +170,13 @@ function RegionPanel({ region, latest }: { region: Region; latest: Entry | undef
         </div>
       )}
 
+      {region.id === 'whole-body' && (
+        <div className="flex flex-col gap-4">
+          <SpaceWeatherBanner />
+          <RadiationPanel />
+        </div>
+      )}
+
       <div className="flex flex-col gap-3">
         <h3 className="font-semibold">How spaceflight affects this region</h3>
         <p className="text-sm text-muted">Paraphrased from NASA sources.</p>
@@ -172,6 +196,17 @@ function RegionPanel({ region, latest }: { region: Region; latest: Entry | undef
           ))}
         </div>
       )}
+
+      <div className="flex flex-col gap-2">
+        <h3 className="font-semibold">Related NASA open-science studies</h3>
+        <p className="text-sm text-muted">
+          Keyword search results from NASA's Open Science Data Repository. Relevance is loose, and many studies are
+          on animals or on the ground. They are research studies, not astronaut health data.
+        </p>
+        {STUDY_TOPICS[region.id].map(({ term, topic }) => (
+          <RelatedStudies key={term} term={term} topic={topic} />
+        ))}
+      </div>
 
       <div className="flex flex-col gap-2 border-t border-line pt-5">
         <h3 className="font-semibold">Why we track this</h3>

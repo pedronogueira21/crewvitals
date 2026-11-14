@@ -144,7 +144,7 @@
       "id": "abdomen",
       "label": "Metabolism and nutrition",
       "indicators": ["glucose"],
-      "hazards": ["distance", "environment"],
+      "hazards": ["distance"],
       "nasa": [
         {
           "text": "On a mission far from Earth there is no resupply. The crew carries all of its food, equipment, and medical supplies, and NASA researches how to keep food and medication usable for the whole mission.",

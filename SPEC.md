@@ -77,14 +77,22 @@ Each indicator is linked to one or more of the five hazards of human spaceflight
 |---|---|---|
 | `head` | Mood, Sleep | Isolation and confinement |
 | `heart` | Blood pressure, Heart rate | Gravity fields; space radiation |
-| `abdomen` | Blood glucose | Hostile/closed environments (nutrition) |
+| `abdomen` | Blood glucose | Distance from Earth (nutrition: no resupply) |
 | `core` | Body temperature | Hostile/closed environments (immune changes) |
 | `bones` | none (information only) | Gravity fields (bone and muscle loss) |
 | `whole-body` | Radiation exposure panel | Space radiation |
 
-The explanatory text and the "why this matters in space" sentence for each region come only from `src/content/evidence.json`. That file already exists and is drafted. Read it, render it, and do not rewrite or extend its text. Each entry has:
+The explanatory text and the "why this matters in space" sentence for each region come only from `src/content/evidence.json`. That file already exists and is drafted. Read it, render it, and do not rewrite or extend its text. Its structure:
 
-- `nasa`: statements paraphrased from a NASA page, each with `source` (URL) and `sourceTitle`. Render with the source link.
+- `sources`: an object keyed by a short name (`bodyInSpace`, `hazards`, `roadmap`). Each value has `title` and `url`.
+- `hazards`: the five HRP hazards, each with `id`, `name` and `nasa` statements.
+- `regions`: one entry per body-map region, each with `id` (the SVG id), `label`, `indicators` (indicator ids from `indicators.ts`), `hazards` (hazard ids), `nasa`, `team` and `reviewStatus`.
+- `escalation`: `nasa` statements and `team` text about care far from Earth (not rendered yet).
+- `_readme`: a note for the team, not rendered.
+
+In every entry:
+
+- `nasa`: a list of statements paraphrased from a NASA page. Each statement has `text` and `source`, where `source` is a key into `sources` (for example `"bodyInSpace"`), not a URL. Render each statement with a link built from that source's `url`, using its `title` as the link text.
 - `team`: the team's own design rationale. Render under the label "Why we track this" and never attribute it to NASA.
 - `reviewStatus`: internal, not rendered.
 
@@ -94,7 +102,9 @@ Sources used: https://www.nasa.gov/humans-in-space/the-human-body-in-space/ and 
 
 ## 6. NASA data integrations
 
-Endpoint status as of 2026-11-14 is noted per API. Before building against each one, call it once with curl and save the real response to `/public/snapshots/` (`donki-flr.json`, `donki-sep.json`, `osdr-<keyword>.json`, `radlab.json`). No API key is needed for any of them.
+Endpoint status as of 2026-11-14 is noted per API. Before building against each one, call it once with curl and save the real response to `/public/snapshots/` (`donki-flr.json`, `donki-sep.json`, `osdr-<keyword>.json` with spaces as hyphens, `radlab.json`, `radlab-24h.json`). The date they were fetched is `SNAPSHOT_RETRIEVED` in `src/lib/nasa.ts`; update it when the snapshots are refreshed.
+
+Each function returns `{ mode: "live" | "snapshot", retrieved: <ISO date>, data }`. The browser calls `/api/...` first; if that does not return this JSON (for example under plain `npm run dev`, where there are no functions), it reads the snapshot files itself and runs the same code from `src/lib/nasa.ts` on them, labelled as a snapshot.. No API key is needed for any of them.
 
 ### 6.1 DONKI — space weather events (confirmed working)
 
@@ -112,8 +122,8 @@ Endpoint status as of 2026-11-14 is noted per API. Before building against each 
 - Function: `/functions/api/studies.ts?term=<keyword>`
 - Upstream: `GET https://osdr.nasa.gov/osdr/data/search?term=<keyword>&from=0&size=5&type=cgene`
 - Response shape: `hits.total` (count) and `hits.hits[]`, each with `_source` containing `"Study Title"`, `"Accession"` (e.g. `"OSD-195"`), `"organism"`, `"Project Type"` (e.g. `"Spaceflight Study"`, `"Ground Study"`), and `"Study Description"`. Note the keys contain spaces.
-- Study link: `https://osdr.nasa.gov/bio/repo/data/studies/<Accession>` (check that one such link opens before relying on the pattern).
-- Use: each indicator panel has a "Related NASA open-science studies" list, fetched with a fixed keyword per indicator: `cardiovascular`, `glucose`, `immune`, `sleep circadian`, `behavior`, `bone loss`, `radiation`.
+- Study link: `https://osdr.nasa.gov/bio/repo/data/studies/<Accession>` (checked 2026-11-14: `OSD-195` opens).
+- Use: each indicator panel has a "Related NASA open-science studies" list, fetched with a fixed keyword per indicator: `cardiovascular` (blood pressure, heart rate), `glucose`, `immune` (body temperature), `circadian` (sleep), `behavior` (mood), `bone loss` (bones), `radiation` (whole body). The lists appear in the body-map region panels. `sleep circadian` returned only 3 hits on 2026-11-14, so it was replaced by the broader `circadian` (9 hits). The function accepts only these keywords.
 - Keyword relevance is loose and many studies are on mice or are ground studies. Always show `organism` and `Project Type` next to each title, and never describe these studies as astronaut data.
 
 ### 6.3 RadLab — measured radiation dose on the ISS (confirmed working)
@@ -127,7 +137,11 @@ Endpoint status as of 2026-11-14 is noted per API. Before building against each 
 - The first snapshot (`radlab.json`) used the docs example, which filters `absorbed_dose_rate>2`. That filter removes the low readings and biases the mean upward, so do not compute the mean or the cumulative dose from it. Fetch a second snapshot without that filter and over a 24-hour window (`radlab-24h.json`), and use that one for the panel. Keep the filter out of the live query too.
 - The data contains two instruments (`DosTel1`, `DosTel2`). Compute statistics per `instrument_id` and show which instrument each number comes from.
 - If the live call fails at runtime, serve the snapshot and label the panel as a snapshot.
-- Use: show the measured absorbed dose rate (µGy/h) as a small time series, and compute an illustrative cumulative dose for the current mission day from the mean rate. State the instrument, the time window of the measurements, and that the cumulative figure is illustrative.
+- Use: show the measured absorbed dose rate (µGy/h) as a small time series on a logarithmic axis, so the short peaks do not flatten the rest of the day.
+- Daily dose: integrate the dose rate over time per instrument (trapezoid rule between consecutive readings, gaps bridged by a straight line; report the longest gap). Do not compute dose from a plain mean of readings. Show mean, median and maximum rate next to it.
+- Illustrative cumulative dose for the current mission day = measured daily dose × mission day, labelled as an illustration that assumes every mission day is like the measured day aboard the ISS, and not a personal dose record. State the instruments and the time window of the measurements.
+- Readings above 100 µGy/h: check whether they cluster in one area. In the 2022-04-01 data all 180 do (latitude 12°S–42°S, longitude 19°W–72°W), so the panel says in plain words that they were taken over southern South America and the nearby South Atlantic Ocean, labelled as an observation from the data, not a NASA statement. The code shows that sentence only if at least 90% of the high readings fall inside that area.
+- RadLab timestamps carry no time zone, and the docs page does not state one. Show them as "RadLab timestamps", without claiming UTC.
 - RadLab data covers specific historical periods. Present it as "measured aboard the ISS, <window>", not as current conditions.
 
 ## 7. Data model (localStorage)

@@ -4,7 +4,9 @@ import { OctagonAlert } from 'lucide-react'
 import { Link, useLocation } from 'react-router'
 import DataControls from '../components/DataControls'
 import IndicatorCard from '../components/IndicatorCard'
+import RadiationPanel from '../components/RadiationPanel'
 import SimulatedTag from '../components/SimulatedTag'
+import SpaceWeatherBanner from '../components/SpaceWeatherBanner'
 import StatusBadge from '../components/StatusBadge'
 import TrendAlerts from '../components/TrendAlerts'
 import UrgentNotice from '../components/UrgentNotice'
@@ -60,6 +62,8 @@ export default function Dashboard() {
         </h1>
         <MissionStart />
       </section>
+
+      <SpaceWeatherBanner />
 
       <section aria-labelledby="overall-heading" className="rounded-lg bg-panel p-5">
         <h2 id="overall-heading" className="font-display text-lg font-semibold">
@@ -127,6 +131,8 @@ export default function Dashboard() {
           ))}
         </div>
       </section>
+
+      <RadiationPanel />
 
       <DataControls />
     </div>
