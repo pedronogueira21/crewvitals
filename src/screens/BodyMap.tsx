@@ -191,7 +191,9 @@ function RegionPanel({ region, latest }: { region: Region; latest: Entry | undef
       <div className="flex flex-col gap-2 border-t border-line pt-5">
         <h3 className="font-semibold">Why we track this</h3>
         <p>{region.team}</p>
-        <p className="text-xs text-muted">Our team's design rationale, not a NASA statement.</p>
+        <p className="text-xs text-muted">
+          Our team's design rationale, drafted with Claude. Not a NASA statement.
+        </p>
       </div>
     </section>
   )

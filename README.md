@@ -74,6 +74,7 @@ Cloudflare Pages, connected to this GitHub repository:
 - The code was written with Claude Code (Anthropic's AI coding assistant) and reviewed by the team.
 - Claude drafted the interface text and the self-care steps.
 - Claude drafted the paraphrases of NASA pages in `src/content/evidence.json`, working from the page linked beside each statement.
+- Claude also drafted the team's design rationale texts in `src/content/evidence.json` ("Why we track this" in the body map, "How the app escalates" on the About page). The app labels them as the team's rationale, drafted with Claude, and not NASA statements.
 - Body map figure. Schematic figure drawn in code with AI assistance.
 - No images were generated with AI, and the app uses no NASA logos, insignia or mission patches.
 - The app itself uses no AI: statuses, alerts and guidance come from fixed rules in `src/content/indicators.ts`.

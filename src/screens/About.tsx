@@ -164,7 +164,9 @@ export default function About() {
         <div className="flex flex-col gap-1 border-t border-line pt-3">
           <h3 className="font-semibold">How the app escalates</h3>
           <p>{ESCALATION.team}</p>
-          <p className="text-xs text-muted">Our team's design rationale, not a NASA statement.</p>
+          <p className="text-xs text-muted">
+            Our team's design rationale, drafted with Claude. Not a NASA statement.
+          </p>
         </div>
       </Section>
 
@@ -179,6 +181,10 @@ export default function About() {
           <li>
             Claude drafted the paraphrases of NASA pages shown in the body map and on this page, working from the
             page linked beside each statement.
+          </li>
+          <li>
+            Claude also drafted the team's design rationale texts ("Why we track this" in the body map and "How the
+            app escalates" on this page). They are labelled as our rationale, not NASA statements.
           </li>
           <li>The body map figure is a schematic drawn in code with AI assistance.</li>
           <li>No images were generated with AI, and the app uses no NASA logos, insignia or mission patches.</li>
