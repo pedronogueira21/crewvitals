@@ -23,7 +23,7 @@ There is no login and no account. Health entries stay in the browser (localStora
 |---|---|---|
 | NASA CCMC DONKI | Solar flares and solar energetic particle events of the last 7 days (space weather banner) | https://ccmc.gsfc.nasa.gov/DONKI/ (API: `https://ccmc.gsfc.nasa.gov/DONKI-API/get/`) |
 | NASA OSDR (Open Science Data Repository) | Related open-science studies, one fixed keyword per indicator | https://osdr.nasa.gov/ (search API: `https://osdr.nasa.gov/osdr/data/search`) |
-| NASA OSDR RadLab | Absorbed dose rate measured by the DosTel instruments aboard the ISS on 1 April 2022 (radiation panel) | https://visualization.osdr.nasa.gov/radlab/ (API docs: https://visualization.osdr.nasa.gov/radlab/gui/data-api) |
+| NASA OSDR RadLab | Absorbed dose rate measured on 1 December 2022 by six instruments, from low Earth orbit to the surface of Mars: ISS (DosTel1), lunar orbit (LRO CRaTER), cislunar flight inside Orion (Artemis I, HERA), deep space (BioSentinel BPD), Mars orbit (TGO Liulin-MO), Mars surface (Curiosity MSL-RAD). Measured dose rates at each instrument, not comparable crew doses (radiation panel) | https://visualization.osdr.nasa.gov/radlab/ (API docs: https://visualization.osdr.nasa.gov/radlab/gui/data-api) |
 
 Space weather data: NASA CCMC DONKI.
 
@@ -37,7 +37,7 @@ None of the APIs needs an API key.
 
 ### Live and snapshot data
 
-The NASA APIs are called server-side by Cloudflare Pages Functions in `functions/api/` (`space-weather`, `studies`, `radiation`). Each caches its response for 1 hour. If the upstream call fails, the function returns the copy bundled in `public/snapshots/`. Every NASA data panel is labelled **Live** or **Snapshot — retrieved &lt;date&gt;**.
+The NASA APIs are called server-side by Cloudflare Pages Functions in `functions/api/` (`space-weather`, `studies?term=`, `radiation?env=`). Each caches its response for 1 hour. If the upstream call fails, the function returns the copy bundled in `public/snapshots/`. Every NASA data panel is labelled **Live** or **Snapshot — retrieved &lt;date&gt;**.
 
 The snapshots were retrieved on 2026-11-14. That date is `SNAPSHOT_RETRIEVED` in `src/lib/nasa.ts`; update it whenever the snapshot files are refreshed.
 

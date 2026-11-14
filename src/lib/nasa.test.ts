@@ -8,12 +8,16 @@ import type { Context } from '../../functions/_lib/serve'
 import {
   DONKI_SNAPSHOT_WINDOW,
   STUDY_KEYWORDS,
-  integrateDose,
+  RADIATION_ENVIRONMENTS,
+  RADLAB_DAY,
+  integrateWindow,
   osdrSnapshot,
   parseStudies,
-  summarizeRadiation,
+  radlabSnapshot,
+  summarizeEnvironment,
   summarizeSpaceWeather,
 } from './nasa'
+import type { EnvironmentId } from './nasa'
 
 const files = import.meta.glob('../../public/snapshots/*.json', { eager: true, import: 'default' })
 const snapshot = (path: string): unknown => {
@@ -58,52 +62,64 @@ describe('OSDR', () => {
 })
 
 describe('RadLab', () => {
-  it('integrates with the trapezoid rule and bridges gaps', () => {
-    const h = 3_600_000
-    // 10 µGy/h for 1 h, then a 2 h gap rising linearly to 30 µGy/h.
-    expect(integrateDose([{ t: 0, rate: 10 }, { t: h, rate: 10 }, { t: 3 * h, rate: 30 }])).toEqual({
-      dose: 10 + 40,
-      hours: 3,
-      longestGap: 2,
+  const h = 3_600_000
+  it('integrates over the window by the trapezoid rule, cutting segments at the edges', () => {
+    // 10 µGy/h flat from -1 h to 1 h, then rising to 30 µGy/h at 3 h. Window [0, 2 h].
+    const readings = [{ t: -h, rate: 10 }, { t: h, rate: 10 }, { t: 3 * h, rate: 30 }]
+    expect(integrateWindow(readings, 0, 2 * h)).toEqual({ dose: 10 + 15, hours: 2, longestGap: 2 })
+  })
+
+  // Expected daily doses from an independent Python check (10 s sampling of the
+  // same straight-line curve) on the snapshots, 2026-11-14.
+  const expected: Record<EnvironmentId, number> = {
+    iss: 268.9,
+    'lunar-orbit': 209.7,
+    'cislunar-orion': 404.1,
+    'deep-space': 270.4,
+    'mars-orbit': 270.6,
+    'mars-surface': 163.4,
+  }
+  for (const env of RADIATION_ENVIRONMENTS) {
+    it(`${env.name}: full day on ${RADLAB_DAY}, dose matches the independent check`, () => {
+      const d = summarizeEnvironment(snapshot(radlabSnapshot(env.id)), env.id)
+      expect(d.hoursCovered).toBeCloseTo(24, 5)
+      expect(d.dailyDose).toBeCloseTo(expected[env.id], 0)
+      expect(d.radlab.spacecraft && d.radlab.trajectory).toBeTruthy()
+      expect(d.series.length).toBeLessThanOrEqual(300)
+      expect(d.median).toBeLessThanOrEqual(d.max)
+    })
+  }
+
+  it('records the RadLab metadata as given', () => {
+    expect(summarizeEnvironment(snapshot(radlabSnapshot('deep-space')), 'deep-space').radlab).toEqual({
+      spacecraft: 'BioSentinel',
+      instrument: 'BPD',
+      instrumentFamily: 'Timepix',
+      trajectory: 'Heliocentric orbit at 1 AU',
     })
   })
 
-  const r = summarizeRadiation(snapshot('/snapshots/radlab-24h.json'))
-  const byId = Object.fromEntries(r.instruments.map((i) => [i.id, i]))
-  it('summarizes the measured day per instrument', () => {
-    expect(Object.keys(byId)).toEqual(['DosTel1', 'DosTel2'])
-    expect(byId.DosTel1.readings).toBe(1192)
-    expect(byId.DosTel2.readings).toBe(1197)
-    // Values recomputed independently in Python from the snapshot on 2026-11-14.
-    expect(byId.DosTel1.dailyDose).toBeCloseTo(291.5, 0)
-    expect(byId.DosTel2.dailyDose).toBeCloseTo(252.1, 0)
-    expect(byId.DosTel1.longestGapMinutes).toBeCloseTo(17.6, 0)
-    expect(byId.DosTel1.median).toBeLessThan(byId.DosTel1.mean / 4)
-    expect(byId.DosTel1.max).toBeCloseTo(731.3, 0)
+  it('ISS: high readings cluster and are named in plain words; other environments have no positions', () => {
+    const iss = summarizeEnvironment(snapshot(radlabSnapshot('iss')), 'iss')
+    expect(iss.highRate?.words).toMatch(/South America/)
+    expect(iss.highRate!.inside / iss.highRate!.count).toBeGreaterThanOrEqual(0.9)
+    expect(summarizeEnvironment(snapshot(radlabSnapshot('mars-orbit')), 'mars-orbit').highRate).toBeNull()
   })
-  it('finds the high-rate cluster and names it in plain words', () => {
-    expect(r.highRate).toMatchObject({ count: 180, inside: 180 })
-    expect(r.highRate?.words).toMatch(/South America/)
-  })
-  it('does not name an area when high readings are spread out', () => {
-    const spread = summarizeRadiation({
-      columns: ['timestamp', 'instrument_id', 'absorbed_dose_rate', 'latitude', 'longitude'],
-      data: [
-        ['2022-04-01T00:00:00', 'A', 150, -30, -50],
-        ['2022-04-01T00:01:00', 'A', 150, 50, 100],
-      ],
-    })
-    expect(spread.highRate).toMatchObject({ count: 2, inside: 1, words: undefined })
-  })
-  it('maps columns by name, not position', () => {
-    const swapped = summarizeRadiation({
-      columns: ['longitude', 'latitude', 'absorbed_dose_rate', 'instrument_id', 'timestamp'],
-      data: [
-        [-50, -30, 4, 'A', '2022-04-01T00:00:00'],
-        [-50, -30, 6, 'A', '2022-04-01T01:00:00'],
-      ],
-    })
-    expect(swapped.instruments[0]).toMatchObject({ id: 'A', dailyDose: 5, mean: 5 })
+
+  it('maps columns by name, not position, and ignores other instruments', () => {
+    const d = summarizeEnvironment(
+      {
+        columns: ['absorbed_dose_rate', 'instrument_id', 'timestamp'],
+        data: [
+          [4, 'MSL-RAD-Surface', `${RADLAB_DAY}T00:00:00`],
+          [999, 'Other', `${RADLAB_DAY}T06:00:00`],
+          [4, 'MSL-RAD-Surface', `${RADLAB_DAY}T23:00:00`],
+        ],
+      },
+      'mars-surface',
+    )
+    expect(d).toMatchObject({ readings: 2, mean: 4, max: 4 })
+    expect(d.dailyDose).toBeCloseTo(4 * 23, 5)
   })
 })
 
@@ -128,29 +144,32 @@ describe('Pages Functions', () => {
     upstreamDown()
     const sw = await call(spaceWeatherFn, 'https://x.dev/api/space-weather')
     expect(sw.body).toMatchObject({ mode: 'snapshot', retrieved: '2026-11-14', data: { window: DONKI_SNAPSHOT_WINDOW } })
-    const rad = await call(radiationFn, 'https://x.dev/api/radiation')
-    expect(rad.body.mode).toBe('snapshot')
-    expect(rad.body.data.instruments).toHaveLength(2)
+    for (const env of RADIATION_ENVIRONMENTS) {
+      const rad = await call(radiationFn, `https://x.dev/api/radiation?env=${env.id}`)
+      expect(rad.body, env.id).toMatchObject({ mode: 'snapshot', data: { id: env.id, instrumentId: env.instrumentId } })
+    }
     const st = await call(studiesFn, 'https://x.dev/api/studies?term=bone%20loss')
     expect(st.body).toMatchObject({ mode: 'snapshot', data: { term: 'bone loss' } })
   })
 
   it('return live data when upstream answers', async () => {
     upstreamServes((url) =>
-      url.includes('DONKI') ? [] : url.includes('radlab') ? snapshot('/snapshots/radlab-24h.json') : snapshot(osdrSnapshot('glucose')),
+      url.includes('DONKI') ? [] : url.includes('radlab') ? snapshot(radlabSnapshot('lunar-orbit')) : snapshot(osdrSnapshot('glucose')),
     )
     expect((await call(spaceWeatherFn, 'https://x.dev/api/space-weather')).body.mode).toBe('live')
-    expect((await call(radiationFn, 'https://x.dev/api/radiation')).body.mode).toBe('live')
+    expect((await call(radiationFn, 'https://x.dev/api/radiation?env=lunar-orbit')).body.mode).toBe('live')
     expect((await call(studiesFn, 'https://x.dev/api/studies?term=glucose')).body.mode).toBe('live')
   })
 
   it('fall back when upstream answers with an unexpected shape', async () => {
     upstreamServes(() => ({ unexpected: true }))
-    expect((await call(radiationFn, 'https://x.dev/api/radiation')).body.mode).toBe('snapshot')
+    expect((await call(radiationFn, 'https://x.dev/api/radiation?env=iss')).body.mode).toBe('snapshot')
   })
 
-  it('studies accepts only the fixed keywords', async () => {
+  it('studies and radiation accept only their fixed lists', async () => {
     upstreamDown()
     expect((await call(studiesFn, 'https://x.dev/api/studies?term=anything')).status).toBe(400)
+    expect((await call(radiationFn, 'https://x.dev/api/radiation?env=moon-surface')).status).toBe(400)
+    expect((await call(radiationFn, 'https://x.dev/api/radiation')).status).toBe(400)
   })
 })

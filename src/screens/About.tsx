@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react'
 import DataModeTag from '../components/DataModeTag'
+import { ModesTag } from '../components/RadiationPanel'
 import SourcedList from '../components/SourcedList'
 import { ESCALATION, SOURCES } from '../content/evidence'
 import { REFERENCE_RANGE_LABEL } from '../content/indicators'
 import { useRadiation, useSpaceWeather, useStudies } from '../lib/api'
 import type { Loaded } from '../lib/api'
-import { STUDY_KEYWORDS } from '../lib/nasa'
+import { RADIATION_ENVIRONMENTS, RADLAB_DAY, STUDY_KEYWORDS } from '../lib/nasa'
 import type { Mode } from '../lib/nasa'
 import { formatDate } from '../lib/mission'
 
@@ -85,7 +86,8 @@ function DataSource({
 
 export default function About() {
   const spaceWeather = useSpaceWeather()
-  const radiation = useRadiation()
+  // RADIATION_ENVIRONMENTS is a constant list, so the hooks run in the same order every render.
+  const radiation = RADIATION_ENVIRONMENTS.map((env) => useRadiation(env.id))
 
   return (
     <div className="flex max-w-3xl flex-col gap-10">
@@ -135,12 +137,12 @@ export default function About() {
             studies. Relevance is loose, many studies are on animals or on the ground, and none of them are
             astronaut health data.
           </DataSource>
-          <DataSource name="NASA OSDR RadLab" href="https://visualization.osdr.nasa.gov/radlab/" mode={<ModeOf loaded={radiation} />}>
-            Absorbed dose rate measured by the DosTel instruments aboard the ISS on one historical day
-            {radiation.state === 'ready' && radiation.result.data.instruments[0]
-              ? ` (${formatDate(radiation.result.data.instruments[0].first.slice(0, 10))})`
-              : ''}
-            , for the radiation panel. The cumulative dose shown is an illustration, not a personal dose record.
+          <DataSource name="NASA OSDR RadLab" href="https://visualization.osdr.nasa.gov/radlab/" mode={<ModesTag all={radiation} />}>
+            Absorbed dose rate measured on {formatDate(RADLAB_DAY)} by six instruments: ISS (DosTel1), lunar orbit
+            (LRO CRaTER), cislunar flight inside Orion (Artemis I, HERA), deep space (BioSentinel BPD), Mars orbit
+            (TGO Liulin-MO) and Mars surface (Curiosity MSL-RAD), for the radiation panel. They are measured dose
+            rates at each instrument, not comparable crew doses. The cumulative dose shown is an illustration, not a
+            personal dose record.
           </DataSource>
         </ul>
 

@@ -1,5 +1,10 @@
+import { useState } from 'react'
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
+  Cell,
+  LabelList,
   Line,
   LineChart,
   ReferenceLine,
@@ -8,17 +13,16 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import type { MissionSetting } from '../content/indicators'
 import { useRadiation } from '../lib/api'
+import type { Loaded } from '../lib/api'
 import { formatDate, missionDayOn, todayISO } from '../lib/mission'
-import type { InstrumentStats, Radiation } from '../lib/nasa'
+import { RADIATION_ENVIRONMENTS, RADLAB_DAY } from '../lib/nasa'
+import type { EnvironmentDose, EnvironmentId, HighRateCluster, Mode } from '../lib/nasa'
 import { useStore } from '../state/store'
 import DataModeTag from './DataModeTag'
 
 const RADLAB_HOME = 'https://visualization.osdr.nasa.gov/radlab/'
-const LINE_STYLE = [
-  { stroke: 'var(--color-accent)', dash: undefined, name: 'solid line' },
-  { stroke: 'var(--color-warn)', dash: '4 3', name: 'dashed line' },
-]
 
 const n0 = (v: number) => Math.round(v).toLocaleString('en-GB')
 const n1 = (v: number) => v.toLocaleString('en-GB', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
@@ -31,123 +35,217 @@ const dose = (uGy: number) =>
 const lat = (v: number) => `${Math.abs(v).toFixed(0)}°${v < 0 ? 'S' : 'N'}`
 const lon = (v: number) => `${Math.abs(v).toFixed(0)}°${v < 0 ? 'W' : 'E'}`
 const clock = (ts: string) => ts.slice(11, 16)
+const DAY_TEXT = formatDate(RADLAB_DAY)
 
-/** Radiation panel from RadLab (SPEC 6.3). */
+/** SPEC 6.3: one line per mission setting that has no measured environment of its own. */
+const SETTING_NOTES: Partial<Record<MissionSetting, { text: string; see: EnvironmentId[] }>> = {
+  'Lunar surface': {
+    text: 'No measured lunar-surface data exists in RadLab; see lunar orbit and cislunar flight.',
+    see: ['lunar-orbit', 'cislunar-orion'],
+  },
+  'Mars transit': {
+    text: 'No measured Mars-transit data exists in RadLab; see deep space and Mars orbit.',
+    see: ['deep-space', 'mars-orbit'],
+  },
+}
+
+/** Radiation panel from RadLab (SPEC 6.3): six measured environments on one day. */
 export default function RadiationPanel() {
-  const loaded = useRadiation()
   const { settings } = useStore()
   const missionDay = missionDayOn(todayISO(), settings.missionStart)
+  const [selected, setSelected] = useState<EnvironmentId>('iss')
+  // RADIATION_ENVIRONMENTS is a constant list, so the hooks run in the same order every render.
+  const all = RADIATION_ENVIRONMENTS.map((env) => ({ env, loaded: useRadiation(env.id) }))
+  const current = all.find((a) => a.env.id === selected)!
+  const note = SETTING_NOTES[settings.setting]
 
   return (
     <section aria-labelledby="radiation-heading" className="flex flex-col gap-4 rounded-lg bg-panel p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 id="radiation-heading" className="font-display text-lg font-semibold">
-          Radiation measured aboard the ISS
+          Measured radiation, from low Earth orbit to the surface of Mars
         </h2>
-        {loaded.state === 'ready' && <DataModeTag mode={loaded.result.mode} retrieved={loaded.result.retrieved} />}
+        <ModesTag all={all.map((a) => a.loaded)} />
       </div>
-      {loaded.state === 'loading' && <p className="text-sm text-muted">Loading radiation data…</p>}
-      {loaded.state === 'error' && <p className="text-sm text-muted">Radiation data is unavailable right now.</p>}
-      {loaded.state === 'ready' && <RadiationBody data={loaded.result.data} missionDay={missionDay} />}
+
+      <p>
+        Absorbed dose rate measured by six instruments on {DAY_TEXT} (RadLab timestamps), the same day for all six.
+        This is one historical day of measurements, not current conditions.
+      </p>
+      <p className="rounded-md border border-warn px-3 py-2 text-sm">
+        The instruments differ in detector design, shielding and location, so these are measured dose rates at each
+        instrument, not comparable crew doses.
+      </p>
+
+      {note && (
+        <p className="text-sm">
+          <span className="font-semibold">{settings.setting}: </span>
+          {note.text}{' '}
+          {note.see.map((id, k) => (
+            <span key={id}>
+              {k > 0 && ' · '}
+              <button type="button" className="text-accent underline" onClick={() => setSelected(id)}>
+                Show {RADIATION_ENVIRONMENTS.find((e) => e.id === id)!.name.toLowerCase()}
+              </button>
+            </span>
+          ))}
+        </p>
+      )}
+
+      <DoseBars all={all} selected={selected} />
+
+      <fieldset>
+        <legend className="mb-2 text-sm font-semibold">Show details for</legend>
+        <div className="flex flex-wrap gap-2">
+          {RADIATION_ENVIRONMENTS.map((env) => (
+            <label
+              key={env.id}
+              className="cursor-pointer rounded-md border border-control px-3 py-1.5 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent has-[:checked]:font-semibold has-[:checked]:text-space has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent"
+            >
+              <input
+                type="radio"
+                name="radiation-environment"
+                className="sr-only"
+                checked={selected === env.id}
+                onChange={() => setSelected(env.id)}
+              />
+              {env.name}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      {current.loaded.state === 'loading' && <p className="text-sm text-muted">Loading radiation data…</p>}
+      {current.loaded.state === 'error' && <p className="text-sm text-muted">This environment is unavailable right now.</p>}
+      {current.loaded.state === 'ready' && (
+        <Details d={current.loaded.result.data} mode={current.loaded.result.mode} retrieved={current.loaded.result.retrieved} missionDay={missionDay} />
+      )}
+
       <p className="text-xs text-muted">
         Radiation data:{' '}
         <a href={RADLAB_HOME} target="_blank" rel="noopener noreferrer" className="text-accent underline">
           NASA OSDR RadLab
         </a>
-        , absorbed dose rate from the DosTel instruments.
+        . Spacecraft, instrument, instrument family and trajectory are shown as RadLab gives them.
       </p>
     </section>
   )
 }
 
-function RadiationBody({ data, missionDay }: { data: Radiation; missionDay: number }) {
-  const first = data.instruments[0]
-  const day = formatDate(first.first.slice(0, 10))
-  const window = `${day}, ${clock(first.first)} to ${clock(data.instruments.reduce((m, i) => (i.last > m ? i.last : m), first.last))}`
+/** One Live/Snapshot label for the six environments, or a breakdown when they differ. */
+export function ModesTag({ all }: { all: Loaded<EnvironmentDose>[] }) {
+  const ready = all.flatMap((l) => (l.state === 'ready' ? [l.result] : []))
+  if (ready.length === 0) return null
+  const modes = new Set<Mode>(ready.map((r) => r.mode))
+  if (modes.size === 1) return <DataModeTag mode={ready[0].mode} retrieved={ready[0].retrieved} />
+  const live = ready.filter((r) => r.mode === 'live').map((r) => r.data.name)
+  return (
+    <p className="text-xs text-muted">
+      Live: {live.join(', ')}. Others: Snapshot — retrieved {formatDate(ready.find((r) => r.mode === 'snapshot')!.retrieved)}.
+    </p>
+  )
+}
+
+function DoseBars({ all, selected }: { all: { env: (typeof RADIATION_ENVIRONMENTS)[number]; loaded: Loaded<EnvironmentDose> }[]; selected: EnvironmentId }) {
+  const rows = all.flatMap(({ env, loaded }) =>
+    loaded.state === 'ready' ? [{ id: env.id, name: env.name, dose: daily(loaded.result.data.dailyDose) }] : [],
+  )
+  if (rows.length === 0) return <p className="text-sm text-muted">Loading radiation data…</p>
+  const label = `Measured daily dose on ${DAY_TEXT}: ${rows.map((r) => `${r.name} ${n1(r.dose)} µGy`).join('; ')}.`
 
   return (
-    <>
-      <p>
-        Measured aboard the ISS, {window} (RadLab timestamps). This is one historical day of measurements, not
-        current conditions.
-      </p>
-
-      <DoseChart instruments={data.instruments} />
-
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[22rem] text-sm tabular-nums">
-          <caption className="sr-only">Dose statistics per instrument for the measured day</caption>
-          <thead>
-            <tr className="border-b border-line text-left text-muted">
-              <th scope="col" className="py-1 pr-3 font-medium">Instrument</th>
-              {data.instruments.map((i, k) => (
-                <th key={i.id} scope="col" className="py-1 pr-3 font-medium">
-                  {i.id} <span className="font-normal">({LINE_STYLE[k % 2].name})</span>
-                </th>
+    <div>
+      <p className="mb-1 text-sm font-semibold">Measured dose for the day, µGy</p>
+      <div role="img" aria-label={label} style={{ height: rows.length * 34 + 16 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={rows} layout="vertical" margin={{ top: 4, right: 56, bottom: 4, left: 4 }}>
+            <XAxis type="number" hide domain={[0, 'dataMax']} />
+            <YAxis
+              type="category"
+              dataKey="name"
+              width={150}
+              tick={{ fill: 'var(--color-ink)', fontSize: 12 }}
+              tickLine={false}
+              axisLine={false}
+            />
+            <Bar dataKey="dose" isAnimationActive={false} barSize={18}>
+              {rows.map((r) => (
+                <Cell
+                  key={r.id}
+                  fill={r.id === selected ? 'var(--color-accent)' : 'color-mix(in srgb, var(--color-accent) 40%, var(--color-panel))'}
+                />
               ))}
-            </tr>
-          </thead>
-          <tbody>
-            <Row label="Measured dose for the day" values={data.instruments.map((i) => dose(daily(i.dailyDose)))} strong />
-            <Row label="Mean rate" values={data.instruments.map((i) => `${n1(i.mean)} µGy/h`)} />
-            <Row label="Median rate" values={data.instruments.map((i) => `${n1(i.median)} µGy/h`)} />
-            <Row
-              label="Maximum rate"
-              values={data.instruments.map(
-                (i) => `${n0(i.max)} µGy/h at ${clock(i.maxAt.time)}, ${lat(i.maxAt.lat)} ${lon(i.maxAt.lon)}`,
-              )}
-            />
-            <Row
-              label="Readings"
-              values={data.instruments.map(
-                (i) => `${n0(i.readings)} over ${n1(i.hoursCovered)} h; longest gap ${n0(i.longestGapMinutes)} min`,
-              )}
-            />
-          </tbody>
-        </table>
+              <LabelList dataKey="dose" position="right" fill="var(--color-ink)" fontSize={12} formatter={(v) => n1(Number(v))} />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
       </div>
+      {rows.length < all.length && <p className="text-xs text-muted">Some environments are still loading or unavailable.</p>}
+    </div>
+  )
+}
+
+function Details({ d, mode, retrieved, missionDay }: { d: EnvironmentDose; mode: Mode; retrieved: string; missionDay: number }) {
+  const where = d.maxAt.lat !== undefined && d.maxAt.lon !== undefined ? `, ${lat(d.maxAt.lat)} ${lon(d.maxAt.lon)}` : ''
+  return (
+    <div className="flex flex-col gap-4 border-t border-line pt-4">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h3 className="font-semibold">{d.name}</h3>
+          <p className="text-sm text-muted">
+            Spacecraft {d.radlab.spacecraft} · instrument {d.radlab.instrument} (
+            {d.instrumentId !== d.radlab.instrument && `${d.instrumentId}, `}family {d.radlab.instrumentFamily}) ·
+            trajectory “{d.radlab.trajectory}” · {DAY_TEXT}
+          </p>
+        </div>
+        <DataModeTag mode={mode} retrieved={retrieved} />
+      </div>
+
+      <DoseChart d={d} />
+
+      <table className="w-full max-w-md text-sm tabular-nums">
+        <caption className="sr-only">Dose statistics for {d.name} on {DAY_TEXT}</caption>
+        <tbody>
+          <Row label="Measured dose for the day" value={dose(daily(d.dailyDose))} strong />
+          <Row label="Mean rate" value={`${n1(d.mean)} µGy/h`} />
+          <Row label="Median rate" value={`${n1(d.median)} µGy/h`} />
+          <Row label="Maximum rate" value={`${n1(d.max)} µGy/h at ${clock(d.maxAt.time)}${where}`} />
+          <Row label="Readings" value={`${n0(d.readings)}; longest gap ${n0(d.longestGapMinutes)} min`} />
+        </tbody>
+      </table>
       <p className="text-xs text-muted">
-        The measured dose is the dose rate integrated over time between the first and last reading of the day
-        (trapezoid rule, gaps bridged by a straight line). The median is shown because a few short peaks pull the
-        mean far above a typical reading.
+        The measured dose is the dose rate integrated over time from 00:00 to 24:00 (trapezoid rule, readings joined by
+        straight lines). Mean, median and maximum use every reading of the day.
       </p>
 
       <div className="rounded-md border border-line p-3">
         <p className="font-semibold">Illustration: cumulative dose by mission day {missionDay}</p>
-        <ul className="mt-1 text-sm tabular-nums">
-          {data.instruments.map((i) => (
-            <li key={i.id}>
-              {i.id}: {missionDay} × {dose(daily(i.dailyDose))} = {dose(daily(i.dailyDose) * missionDay)}
-            </li>
-          ))}
-        </ul>
+        <p className="mt-1 text-sm tabular-nums">
+          {d.name}: {missionDay} × {dose(daily(d.dailyDose))} = {dose(daily(d.dailyDose) * missionDay)}
+        </p>
         <p className="mt-2 text-sm text-muted">
-          An illustration only: it assumes every mission day is like the measured day aboard the ISS. It is not a
+          An illustration only: it assumes every mission day is like this measured day at this instrument. It is not a
           personal dose record.
         </p>
       </div>
 
-      {data.highRate && <HighRateNote cluster={data.highRate} />}
-    </>
+      {d.highRate && <HighRateNote cluster={d.highRate} />}
+    </div>
   )
 }
 
-function Row({ label, values, strong }: { label: string; values: string[]; strong?: boolean }) {
+function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
     <tr className="border-b border-line/50 align-top">
       <th scope="row" className="py-1.5 pr-3 text-left font-normal text-muted">
         {label}
       </th>
-      {values.map((v, k) => (
-        <td key={k} className={`py-1.5 pr-3 ${strong ? 'font-semibold' : ''}`}>
-          {v}
-        </td>
-      ))}
+      <td className={`py-1.5 ${strong ? 'font-semibold' : ''}`}>{value}</td>
     </tr>
   )
 }
 
-function HighRateNote({ cluster }: { cluster: NonNullable<Radiation['highRate']> }) {
+function HighRateNote({ cluster }: { cluster: HighRateCluster }) {
   const where = `latitude ${lat(cluster.latRange[1])} to ${lat(cluster.latRange[0])}, longitude ${lon(cluster.lonRange[1])} to ${lon(cluster.lonRange[0])}`
   return (
     <div className="rounded-md border border-line p-3 text-sm">
@@ -162,18 +260,14 @@ function HighRateNote({ cluster }: { cluster: NonNullable<Radiation['highRate']>
   )
 }
 
-function DoseChart({ instruments }: { instruments: InstrumentStats[] }) {
-  const series = instruments.map((i) => ({ id: i.id, data: i.series.map(([h, rate]) => ({ h, rate })) }))
-  const peak = Math.max(...instruments.map((i) => i.max))
-  const label = `Absorbed dose rate over the measured day, logarithmic scale. ${instruments
-    .map((i) => `${i.id}: median ${n1(i.median)}, maximum ${n0(i.max)} µGy/h`)
-    .join('; ')}.`
-
+function DoseChart({ d }: { d: EnvironmentDose }) {
+  const data = d.series.map(([h, rate]) => ({ h, rate }))
+  const label = `Absorbed dose rate for ${d.name} over ${DAY_TEXT}, logarithmic scale, ${d.seriesNote}. Median ${n1(d.median)}, maximum ${n1(d.max)} µGy/h.`
   return (
     <div>
-      <div role="img" aria-label={label} className="h-56">
+      <div role="img" aria-label={label} className="h-52">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
+          <LineChart data={data} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
             <CartesianGrid stroke="var(--color-line)" strokeOpacity={0.5} vertical={false} />
             <XAxis
               dataKey="h"
@@ -186,8 +280,8 @@ function DoseChart({ instruments }: { instruments: InstrumentStats[] }) {
             />
             <YAxis
               scale="log"
-              domain={[1, peak > 1000 ? 10000 : 1000]}
-              ticks={peak > 1000 ? [1, 10, 100, 1000, 10000] : [1, 10, 100, 1000]}
+              domain={[1, 1000]}
+              ticks={[1, 10, 100, 1000]}
               allowDataOverflow
               tick={{ fill: 'var(--color-muted)', fontSize: 12 }}
               stroke="var(--color-line)"
@@ -199,30 +293,20 @@ function DoseChart({ instruments }: { instruments: InstrumentStats[] }) {
                 const minutes = Math.round(Number(h) * 60)
                 return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
               }}
-              formatter={(value, name) => [`${n1(Number(value))} µGy/h`, name]}
+              formatter={(value) => [`${n1(Number(value))} µGy/h`, d.name]}
               contentStyle={{ background: 'var(--color-raised)', border: '1px solid var(--color-line)' }}
               labelStyle={{ color: 'var(--color-ink)' }}
               itemStyle={{ color: 'var(--color-ink)' }}
             />
-            {series.map((s, k) => (
-              <Line
-                key={s.id}
-                data={s.data}
-                dataKey="rate"
-                name={s.id}
-                stroke={LINE_STYLE[k % 2].stroke}
-                strokeDasharray={LINE_STYLE[k % 2].dash}
-                strokeWidth={1.25}
-                dot={false}
-                isAnimationActive={false}
-              />
-            ))}
+            <Line dataKey="rate" stroke="var(--color-accent)" strokeWidth={1.25} dot={data.length <= 100} isAnimationActive={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>
       <p className="mt-1 text-xs text-muted">
-        µGy/h on a logarithmic scale, so the short peaks do not flatten the rest of the day. Dotted line: 100 µGy/h.
-        {series.map((s, k) => ` ${s.id}: ${LINE_STYLE[k % 2].name}.`).join('')}
+        µGy/h on a logarithmic scale, so short peaks do not flatten the rest of the day. Dotted line: 100 µGy/h.{' '}
+        {d.seriesNote === '5-minute averages'
+          ? 'The chart shows 5-minute averages; the statistics use every reading.'
+          : 'The chart shows every reading.'}
       </p>
     </div>
   )

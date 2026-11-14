@@ -5,14 +5,14 @@ import { useEffect, useState } from 'react'
 import {
   DONKI_SNAPSHOTS,
   DONKI_SNAPSHOT_WINDOW,
-  RADLAB_SNAPSHOT,
   SNAPSHOT_RETRIEVED,
   osdrSnapshot,
   parseStudies,
-  summarizeRadiation,
+  radlabSnapshot,
+  summarizeEnvironment,
   summarizeSpaceWeather,
 } from './nasa'
-import type { ApiResult, Radiation, SpaceWeather, Studies, StudyKeyword } from './nasa'
+import type { ApiResult, EnvironmentDose, EnvironmentId, SpaceWeather, Studies, StudyKeyword } from './nasa'
 
 async function getJson(path: string): Promise<unknown> {
   const res = await fetch(path)
@@ -43,7 +43,10 @@ const loaders = {
     load<SpaceWeather>('/api/space-weather', async () =>
       summarizeSpaceWeather(await getJson(DONKI_SNAPSHOTS.flr), await getJson(DONKI_SNAPSHOTS.sep), DONKI_SNAPSHOT_WINDOW),
     ),
-  radiation: () => load<Radiation>('/api/radiation', async () => summarizeRadiation(await getJson(RADLAB_SNAPSHOT))),
+  radiation: (env: EnvironmentId) =>
+    load<EnvironmentDose>(`/api/radiation?env=${env}`, async () =>
+      summarizeEnvironment(await getJson(radlabSnapshot(env)), env),
+    ),
   studies: (term: StudyKeyword) =>
     load<Studies>(`/api/studies?term=${encodeURIComponent(term)}`, async () =>
       parseStudies(await getJson(osdrSnapshot(term)), term),
@@ -77,5 +80,5 @@ function useLoad<T>(key: string, loader: () => Promise<ApiResult<T>>): Loaded<T>
 }
 
 export const useSpaceWeather = () => useLoad('space-weather', loaders.spaceWeather)
-export const useRadiation = () => useLoad('radiation', loaders.radiation)
+export const useRadiation = (env: EnvironmentId) => useLoad(`radiation:${env}`, () => loaders.radiation(env))
 export const useStudies = (term: StudyKeyword) => useLoad(`studies:${term}`, () => loaders.studies(term))

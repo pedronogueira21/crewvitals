@@ -221,7 +221,7 @@
           "source": "bodyInSpace"
         }
       ],
-      "team": "This panel shows radiation dose rates actually measured aboard the International Space Station, from NASA's RadLab database, and recent solar events from NASA's DONKI space weather database. The cumulative dose shown is an illustration for the mission day, not a personal dose record.",
+      "team": "This panel shows radiation dose rates measured by instruments aboard the International Space Station and on other spacecraft from low Earth orbit to the surface of Mars, from NASA's RadLab database, and recent solar events from NASA's DONKI space weather database. The cumulative dose shown is an illustration for the mission day, not a personal dose record.",
       "reviewStatus": "drafted from source, needs human check"
     }
   ],

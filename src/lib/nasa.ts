@@ -139,22 +139,57 @@ export function parseStudies(json: unknown, term: StudyKeyword): Studies {
 // RadLab radiation dose (6.3)
 // ---------------------------------------------------------------------------
 
-/** The measured day, without the docs example's absorbed_dose_rate>2 filter. */
-export const RADLAB_WINDOW = { start: '2022-04-01T00:00', end: '2022-04-02T00:00' }
-export const RADLAB_SNAPSHOT = '/snapshots/radlab-24h.json'
-export const RADLAB_URL =
-  'https://visualization.osdr.nasa.gov/radlab/api/?spacecraft=ISS&instrument=DosTel' +
-  `&timestamp%3E=${encodeURIComponent(RADLAB_WINDOW.start)}` +
-  `&timestamp%3C${encodeURIComponent(RADLAB_WINDOW.end)}` +
-  '&absorbed_dose_rate&latitude&longitude&format=json'
+/**
+ * The one calendar day used for every environment, so the comparison covers
+ * the same space-weather period. 1 Dec 2022 is the only day between 17 Nov
+ * and 11 Dec 2022 on which TGO Liulin-MO has no multi-hour gap; the other
+ * five instruments have full days at their normal cadence.
+ */
+export const RADLAB_DAY = '2022-12-01'
 
-/** Readings above this rate (µGy/h) are checked for a geographic cluster. */
+/** Six measured environments, each one spacecraft and one instrument. */
+export const RADIATION_ENVIRONMENTS = [
+  { id: 'iss', name: 'ISS', instrumentId: 'DosTel1' },
+  { id: 'lunar-orbit', name: 'Lunar orbit', instrumentId: 'CRaTER-D1D2' },
+  { id: 'cislunar-orion', name: 'Cislunar flight inside Orion', instrumentId: 'Artemis-I-HERA-HSU1' },
+  { id: 'deep-space', name: 'Deep space', instrumentId: 'BPD' },
+  { id: 'mars-orbit', name: 'Mars orbit', instrumentId: 'Liulin-MO-AB-Orbit' },
+  { id: 'mars-surface', name: 'Mars surface', instrumentId: 'MSL-RAD-Surface' },
+] as const
+export type EnvironmentId = (typeof RADIATION_ENVIRONMENTS)[number]['id']
+
+export function environment(id: unknown) {
+  return RADIATION_ENVIRONMENTS.find((e) => e.id === id)
+}
+
+export function radlabSnapshot(id: EnvironmentId): string {
+  return `/snapshots/radlab-${id}.json`
+}
+
+/** Readings this far either side of the day are fetched so the dose can be integrated exactly from 00:00 to 24:00. */
+const PAD_HOURS = 6
+
+export function radlabUrl(id: EnvironmentId): string {
+  const env = environment(id)!
+  const day = Date.parse(`${RADLAB_DAY}T00:00:00Z`)
+  const iso = (ms: number) => new Date(ms).toISOString().slice(0, 16)
+  return (
+    'https://visualization.osdr.nasa.gov/radlab/api/' +
+    `?instrument_id=${encodeURIComponent(env.instrumentId)}` +
+    `&timestamp%3E=${encodeURIComponent(iso(day - PAD_HOURS * 3_600_000))}` +
+    `&timestamp%3C${encodeURIComponent(iso(day + (24 + PAD_HOURS) * 3_600_000))}` +
+    '&absorbed_dose_rate&spacecraft&instrument&instrument_family&trajectory' +
+    (id === 'iss' ? '&latitude&longitude' : '') +
+    '&format=json'
+  )
+}
+
+/** Readings above this rate (µGy/h) are checked for a geographic cluster (ISS only: the only one with positions). */
 export const HIGH_RATE = 100
 
 /**
- * Area tested for the cluster, found by looking at the 2022-04-01 data. The
- * sentence is shown only when the data itself puts nearly all high readings
- * inside it, so a different measured day cannot get a wrong description.
+ * Area tested for the ISS cluster, found by looking at the data. The sentence
+ * is shown only when the data itself puts nearly all high readings inside it.
  */
 const CLUSTER_AREA = {
   lat: [-50, -5],
@@ -163,41 +198,39 @@ const CLUSTER_AREA = {
   minShare: 0.9,
 }
 
-export type InstrumentStats = {
-  id: string
-  readings: number
-  /** RadLab timestamps of the first and last reading, as given. */
-  first: string
-  last: string
-  /** Integral of the dose rate between the first and last reading, µGy. */
-  dailyDose: number
-  hoursCovered: number
-  longestGapMinutes: number
-  mean: number
-  median: number
-  max: number
-  maxAt: { time: string; lat: number; lon: number }
-  /** [hours since the first reading of the day, µGy/h] */
-  series: [number, number][]
-}
-
 export type HighRateCluster = {
   threshold: number
   count: number
-  /** Readings above the threshold inside the cluster area. */
   inside: number
   latRange: [number, number]
   lonRange: [number, number]
-  /** Plain-words place, only when at least minShare of the readings are inside. */
   words?: string
 }
 
-export type Radiation = {
-  instruments: InstrumentStats[]
+export type EnvironmentDose = {
+  id: EnvironmentId
+  name: string
+  instrumentId: string
+  /** As given by RadLab for this instrument. RadLab does not expose a data source or agency. */
+  radlab: { spacecraft: string; instrument: string; instrumentFamily: string; trajectory: string }
+  day: string
+  /** Absorbed dose integrated over the calendar day (00:00–24:00, RadLab timestamps), µGy. */
+  dailyDose: number
+  hoursCovered: number
+  longestGapMinutes: number
+  /** Readings within the day. */
+  readings: number
+  mean: number
+  median: number
+  max: number
+  maxAt: { time: string; lat?: number; lon?: number }
+  /** [hours since 00:00, µGy/h]; 5-minute averages when the day has more than 300 readings. */
+  series: [number, number][]
+  seriesNote: 'readings' | '5-minute averages'
   highRate: HighRateCluster | null
 }
 
-type Reading = { t: number; time: string; rate: number; lat: number; lon: number }
+type Reading = { t: number; time: string; rate: number; lat?: number; lon?: number }
 
 /** RadLab timestamps carry no zone; they are only compared with each other. */
 const toMs = (ts: string) => Date.parse(`${ts}Z`)
@@ -208,78 +241,119 @@ function median(sorted: number[]): number {
 }
 
 /**
- * Daily dose by the trapezoid rule over consecutive readings, which bridges a
- * gap between readings with a straight line. The longest gap is reported.
+ * Dose over [start, end] by the trapezoid rule on the readings, which are
+ * joined by straight lines (so gaps are bridged) and cut at the window edges
+ * by linear interpolation. Times in ms, rates in µGy/h, dose in µGy.
  */
-export function integrateDose(readings: { t: number; rate: number }[]): { dose: number; hours: number; longestGap: number } {
+export function integrateWindow(
+  readings: { t: number; rate: number }[],
+  start: number,
+  end: number,
+): { dose: number; hours: number; longestGap: number } {
   let dose = 0
+  let ms = 0
   let longestGap = 0
   for (let i = 1; i < readings.length; i++) {
-    const hours = (readings[i].t - readings[i - 1].t) / 3_600_000
-    dose += ((readings[i].rate + readings[i - 1].rate) / 2) * hours
-    longestGap = Math.max(longestGap, hours)
+    const a = readings[i - 1], b = readings[i]
+    const from = Math.max(a.t, start), to = Math.min(b.t, end)
+    if (to <= from) continue
+    const at = (t: number) => a.rate + ((b.rate - a.rate) * (t - a.t)) / (b.t - a.t)
+    dose += ((at(from) + at(to)) / 2) * ((to - from) / 3_600_000)
+    ms += to - from
+    longestGap = Math.max(longestGap, (b.t - a.t) / 3_600_000)
   }
-  const hours = readings.length > 1 ? (readings.at(-1)!.t - readings[0].t) / 3_600_000 : 0
-  return { dose, hours, longestGap }
+  return { dose, hours: ms / 3_600_000, longestGap }
 }
 
-export function summarizeRadiation(json: unknown): Radiation {
+function downsample(readings: Reading[], dayStart: number): { series: [number, number][]; note: EnvironmentDose['seriesNote'] } {
+  const h = (t: number) => Math.round(((t - dayStart) / 3_600_000) * 1000) / 1000
+  if (readings.length <= 300) return { series: readings.map((r) => [h(r.t), r.rate]), note: 'readings' }
+  const bins = new Map<number, number[]>()
+  for (const r of readings) {
+    const bin = Math.floor((r.t - dayStart) / 300_000)
+    if (!bins.has(bin)) bins.set(bin, [])
+    bins.get(bin)!.push(r.rate)
+  }
+  const series = [...bins.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([bin, rates]): [number, number] => [h(dayStart + bin * 300_000 + 150_000), rates.reduce((s, r) => s + r, 0) / rates.length])
+  return { series, note: '5-minute averages' }
+}
+
+function highRateCluster(readings: Reading[]): HighRateCluster | null {
+  const high = readings.filter((r) => r.rate > HIGH_RATE && r.lat !== undefined && r.lon !== undefined)
+  if (high.length === 0) return null
+  const { lat, lon } = CLUSTER_AREA
+  const inside = high.filter((r) => r.lat! >= lat[0] && r.lat! <= lat[1] && r.lon! >= lon[0] && r.lon! <= lon[1]).length
+  const range = (vs: number[]): [number, number] => [Math.min(...vs), Math.max(...vs)]
+  return {
+    threshold: HIGH_RATE,
+    count: high.length,
+    inside,
+    latRange: range(high.map((r) => r.lat!)),
+    lonRange: range(high.map((r) => r.lon!)),
+    words: inside / high.length >= CLUSTER_AREA.minShare ? CLUSTER_AREA.words : undefined,
+  }
+}
+
+export function summarizeEnvironment(json: unknown, id: EnvironmentId): EnvironmentDose {
+  const env = environment(id)
   const { columns, data } = (json ?? {}) as { columns?: unknown; data?: unknown }
-  if (!Array.isArray(columns) || !Array.isArray(data)) fail('RadLab')
+  if (!env || !Array.isArray(columns) || !Array.isArray(data)) fail('RadLab')
   // Map rows to objects by column name, never by position.
   const col = (name: string) => (columns as unknown[]).indexOf(name)
   const c = { time: col('timestamp'), id: col('instrument_id'), rate: col('absorbed_dose_rate'), lat: col('latitude'), lon: col('longitude') }
-  if (Object.values(c).some((i) => i < 0)) fail('RadLab')
+  if (c.time < 0 || c.id < 0 || c.rate < 0) fail('RadLab')
+  const text = (row: unknown[], name: string) => {
+    const i = col(name)
+    return i >= 0 && typeof row[i] === 'string' ? (row[i] as string) : ''
+  }
 
-  const byInstrument = new Map<string, Reading[]>()
+  const all: Reading[] = []
+  let meta: unknown[] | undefined
   for (const row of data as unknown[][]) {
-    const time = row[c.time], id = row[c.id], rate = row[c.rate], lat = row[c.lat], lon = row[c.lon]
-    if (typeof time !== 'string' || typeof id !== 'string' || typeof rate !== 'number' || !Number.isFinite(rate)) continue
-    if (typeof lat !== 'number' || typeof lon !== 'number') continue
+    const time = row[c.time], rate = row[c.rate]
+    if (row[c.id] !== env.instrumentId || typeof time !== 'string' || typeof rate !== 'number' || !Number.isFinite(rate)) continue
     const t = toMs(time)
     if (Number.isNaN(t)) continue
-    if (!byInstrument.has(id)) byInstrument.set(id, [])
-    byInstrument.get(id)!.push({ t, time, rate, lat, lon })
+    const lat = c.lat >= 0 && typeof row[c.lat] === 'number' ? (row[c.lat] as number) : undefined
+    const lon = c.lon >= 0 && typeof row[c.lon] === 'number' ? (row[c.lon] as number) : undefined
+    all.push({ t, time, rate, lat, lon })
+    meta ??= row
   }
-  if (byInstrument.size === 0) fail('RadLab')
+  all.sort((a, b) => a.t - b.t)
 
-  const instruments = [...byInstrument.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([id, readings]): InstrumentStats => {
-      readings.sort((a, b) => a.t - b.t)
-      const rates = readings.map((r) => r.rate).sort((a, b) => a - b)
-      const peak = readings.reduce((m, r) => (r.rate > m.rate ? r : m))
-      const { dose, hours, longestGap } = integrateDose(readings)
-      return {
-        id,
-        readings: readings.length,
-        first: readings[0].time,
-        last: readings.at(-1)!.time,
-        dailyDose: dose,
-        hoursCovered: hours,
-        longestGapMinutes: longestGap * 60,
-        mean: rates.reduce((s, r) => s + r, 0) / rates.length,
-        median: median(rates),
-        max: peak.rate,
-        maxAt: { time: peak.time, lat: peak.lat, lon: peak.lon },
-        series: readings.map((r) => [Math.round(((r.t - readings[0].t) / 3_600_000) * 1000) / 1000, r.rate]),
-      }
-    })
+  const dayStart = toMs(`${RADLAB_DAY}T00:00:00`)
+  const dayEnd = dayStart + 86_400_000
+  const inDay = all.filter((r) => r.t >= dayStart && r.t < dayEnd)
+  if (inDay.length < 2 || !meta) fail('RadLab')
 
-  const high = [...byInstrument.values()].flat().filter((r) => r.rate > HIGH_RATE)
-  let highRate: HighRateCluster | null = null
-  if (high.length > 0) {
-    const { lat, lon } = CLUSTER_AREA
-    const inside = high.filter((r) => r.lat >= lat[0] && r.lat <= lat[1] && r.lon >= lon[0] && r.lon <= lon[1]).length
-    const range = (vs: number[]): [number, number] => [Math.min(...vs), Math.max(...vs)]
-    highRate = {
-      threshold: HIGH_RATE,
-      count: high.length,
-      inside,
-      latRange: range(high.map((r) => r.lat)),
-      lonRange: range(high.map((r) => r.lon)),
-      words: inside / high.length >= CLUSTER_AREA.minShare ? CLUSTER_AREA.words : undefined,
-    }
+  const { dose, hours, longestGap } = integrateWindow(all, dayStart, dayEnd)
+  const rates = inDay.map((r) => r.rate).sort((a, b) => a - b)
+  const peak = inDay.reduce((m, r) => (r.rate > m.rate ? r : m))
+  const { series, note } = downsample(inDay, dayStart)
+
+  return {
+    id: env.id,
+    name: env.name,
+    instrumentId: env.instrumentId,
+    radlab: {
+      spacecraft: text(meta, 'spacecraft'),
+      instrument: text(meta, 'instrument'),
+      instrumentFamily: text(meta, 'instrument_family'),
+      trajectory: text(meta, 'trajectory'),
+    },
+    day: RADLAB_DAY,
+    dailyDose: dose,
+    hoursCovered: hours,
+    longestGapMinutes: longestGap * 60,
+    readings: inDay.length,
+    mean: rates.reduce((s, r) => s + r, 0) / rates.length,
+    median: median(rates),
+    max: peak.rate,
+    maxAt: { time: peak.time, lat: peak.lat, lon: peak.lon },
+    series,
+    seriesNote: note,
+    highRate: highRateCluster(inDay),
   }
-  return { instruments, highRate }
 }

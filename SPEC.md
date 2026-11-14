@@ -102,9 +102,9 @@ Sources used: https://www.nasa.gov/humans-in-space/the-human-body-in-space/ and 
 
 ## 6. NASA data integrations
 
-Endpoint status as of 2026-11-14 is noted per API. Before building against each one, call it once with curl and save the real response to `/public/snapshots/` (`donki-flr.json`, `donki-sep.json`, `osdr-<keyword>.json` with spaces as hyphens, `radlab.json`, `radlab-24h.json`). The date they were fetched is `SNAPSHOT_RETRIEVED` in `src/lib/nasa.ts`; update it when the snapshots are refreshed.
+Endpoint status as of 2026-11-14 is noted per API. Before building against each one, call it once with curl and save the real response to `/public/snapshots/` (`donki-flr.json`, `donki-sep.json`, `osdr-<keyword>.json` with spaces as hyphens, `radlab-<environment>.json` for the six RadLab environments; `radlab.json` is the original docs-example response, kept for reference and not used). The date they were fetched is `SNAPSHOT_RETRIEVED` in `src/lib/nasa.ts`; update it when the snapshots are refreshed.
 
-Each function returns `{ mode: "live" | "snapshot", retrieved: <ISO date>, data }`. The browser calls `/api/...` first; if that does not return this JSON (for example under plain `npm run dev`, where there are no functions), it reads the snapshot files itself and runs the same code from `src/lib/nasa.ts` on them, labelled as a snapshot.. No API key is needed for any of them.
+Each function returns `{ mode: "live" | "snapshot", retrieved: <ISO date>, data }`. The browser calls `/api/...` first; if that does not return this JSON (for example under plain `npm run dev`, where there are no functions), it reads the snapshot files itself and runs the same code from `src/lib/nasa.ts` on them, labelled as a snapshot. No API key is needed for any of them.
 
 ### 6.1 DONKI — space weather events (confirmed working)
 
@@ -126,23 +126,36 @@ Each function returns `{ mode: "live" | "snapshot", retrieved: <ISO date>, data 
 - Use: each indicator panel has a "Related NASA open-science studies" list, fetched with a fixed keyword per indicator: `cardiovascular` (blood pressure, heart rate), `glucose`, `immune` (body temperature), `circadian` (sleep), `behavior` (mood), `bone loss` (bones), `radiation` (whole body). The lists appear in the body-map region panels. `sleep circadian` returned only 3 hits on 2026-11-14, so it was replaced by the broader `circadian` (9 hits). The function accepts only these keywords.
 - Keyword relevance is loose and many studies are on mice or are ground studies. Always show `organism` and `Project Type` next to each title, and never describe these studies as astronaut data.
 
-### 6.3 RadLab — measured radiation dose on the ISS (confirmed working)
+### 6.3 RadLab — measured radiation dose, six environments (confirmed working)
 
-- Function: `/functions/api/radiation.ts`
-- Docs: https://visualization.osdr.nasa.gov/radlab/gui/data-api
-- Upstream: `GET https://visualization.osdr.nasa.gov/radlab/api/`
-- Key-value parameters: `spacecraft=ISS`; `instrument=DosTel` (also `instrument_family`, and `instrument_id` such as `DosTel1`, case-sensitive); `timestamp` with operators `>=`, `>`, `<`, `<=`, usable more than once; bare field names to return extra columns (`absorbed_dose_rate` in µGy/hour, `dose_equivalent_rate` in µSv/hour, `flux`, `latitude`, `longitude`, `altitude`); `format=csv` (default), `tsv`, `json`, or `html`.
-- Documented example (URL-encoded): `https://visualization.osdr.nasa.gov/radlab/api/?spacecraft=ISS&instrument=DosTel&timestamp%3E=2022-04-01T23%3A00&timestamp%3C2022-04-02T01%3A05&absorbed_dose_rate%3E2&flux&latitude&longitude&altitude&b&l&format=html`
-- Confirmed 2026-11-14 with `format=json`. The response is an object `{columns, index, data}`: `columns` is the list of column names, `data` is an array of rows (each row an array in column order), not a list of objects. Columns seen: `timestamp`, `instrument_id`, `absorbed_dose_rate`, `altitude`, `flux`, `instrument`, `latitude`, `longitude`, `spacecraft`. Map rows to objects by column name, never by position.
-- The first snapshot (`radlab.json`) used the docs example, which filters `absorbed_dose_rate>2`. That filter removes the low readings and biases the mean upward, so do not compute the mean or the cumulative dose from it. Fetch a second snapshot without that filter and over a 24-hour window (`radlab-24h.json`), and use that one for the panel. Keep the filter out of the live query too.
-- The data contains two instruments (`DosTel1`, `DosTel2`). Compute statistics per `instrument_id` and show which instrument each number comes from.
-- If the live call fails at runtime, serve the snapshot and label the panel as a snapshot.
-- Use: show the measured absorbed dose rate (µGy/h) as a small time series on a logarithmic axis, so the short peaks do not flatten the rest of the day.
-- Daily dose: integrate the dose rate over time per instrument (trapezoid rule between consecutive readings, gaps bridged by a straight line; report the longest gap). Do not compute dose from a plain mean of readings. Show mean, median and maximum rate next to it.
-- Illustrative cumulative dose for the current mission day = measured daily dose × mission day, labelled as an illustration that assumes every mission day is like the measured day aboard the ISS, and not a personal dose record. State the instruments and the time window of the measurements.
-- Readings above 100 µGy/h: check whether they cluster in one area. In the 2022-04-01 data all 180 do (latitude 12°S–42°S, longitude 19°W–72°W), so the panel says in plain words that they were taken over southern South America and the nearby South Atlantic Ocean, labelled as an observation from the data, not a NASA statement. The code shows that sentence only if at least 90% of the high readings fall inside that area.
-- RadLab timestamps carry no time zone, and the docs page does not state one. Show them as "RadLab timestamps", without claiming UTC.
-- RadLab data covers specific historical periods. Present it as "measured aboard the ISS, <window>", not as current conditions.
+- Function: `/functions/api/radiation.ts?env=<id>`. It accepts only the six environment ids below and returns 400 for anything else.
+- Docs: https://visualization.osdr.nasa.gov/radlab/gui/data-api (returned a server error on 2026-11-14; the API itself worked).
+- Upstream: `GET https://visualization.osdr.nasa.gov/radlab/api/`. Key-value filters such as `instrument_id=DosTel1` and `timestamp` with `>=`, `>`, `<`, `<=` (usable more than once); bare field names add columns; `format=json`. There is no "not equal" filter and no catalogue endpoint.
+- JSON response: `{columns, index, data}`, rows as arrays in column order. Map rows to objects by column name, never by position.
+- Fields: `absorbed_dose_rate` (µGy/h) is filled for every instrument used. `dose_equivalent_rate` is empty for all of them, so the panel shows absorbed dose only. `latitude`/`longitude` exist only for the ISS.
+- RadLab exposes `spacecraft`, `instrument`, `instrument_family` and `trajectory` per instrument; show them as given. It exposes no data source or agency field, so none is shown.
+- Environments, all on the same calendar day, **1 Dec 2022** (`RADLAB_DAY` in `src/lib/nasa.ts`):
+
+| id | Name in the app | `instrument_id` | RadLab spacecraft / instrument / family / trajectory |
+|---|---|---|---|
+| `iss` | ISS | `DosTel1` | ISS / DosTel1 / DosTel / LEO |
+| `lunar-orbit` | Lunar orbit | `CRaTER-D1D2` | LRO / CRaTER / CRaTER / Lunar orbit |
+| `cislunar-orion` | Cislunar flight inside Orion | `Artemis-I-HERA-HSU1` | Orion / HERA-HSU1 / Timepix / Lunar flyby |
+| `deep-space` | Deep space | `BPD` | BioSentinel / BPD / Timepix / Heliocentric orbit at 1 AU |
+| `mars-orbit` | Mars orbit | `Liulin-MO-AB-Orbit` | TGO / Liulin-MO-AB / Liulin / Mars orbit |
+| `mars-surface` | Mars surface | `MSL-RAD-Surface` | Curiosity / MSL-RAD / RAD / Mars surface |
+
+- Why 1 Dec 2022: it is the only day between 17 Nov and 11 Dec 2022 (Artemis I flight) on which TGO Liulin-MO has no multi-hour gap; the other five have full days at their normal cadence. DONKI lists no SEP events from 17 Nov to 11 Dec 2022 and one M1.0 flare on 1 Dec. Using one day for all six keeps the comparison in the same space-weather period.
+- Query: the instrument's readings from 18:00 the day before to 06:00 the day after (6 hours of padding), so the dose can be integrated over exactly 00:00–24:00. Snapshots: `radlab-<id>.json`, the same query saved on 2026-11-14. The docs example's `absorbed_dose_rate>2` filter is never used.
+- Daily dose: integrate the dose rate over 00:00–24:00 by the trapezoid rule, readings joined by straight lines and cut at midnight by linear interpolation; report the longest gap. Never compute dose from a plain mean of readings. Mean, median and maximum rate use every reading of the day.
+- Panel: a bar comparison of the measured daily dose of all six; a control to pick one (default ISS) with its time series on a logarithmic axis (5-minute averages when the day has more than 300 readings) and its mean, median and maximum. Label each environment exactly as measured, with spacecraft, instrument and date. Never present one environment as another.
+- Visible caveat: "The instruments differ in detector design, shielding and location, so these are measured dose rates at each instrument, not comparable crew doses."
+- Mission setting line: Lunar surface → "No measured lunar-surface data exists in RadLab; see lunar orbit and cislunar flight." Mars transit → "No measured Mars-transit data exists in RadLab; see deep space and Mars orbit." ISS → no line. RadLab has no lunar-surface data and no Mars-cruise data (checked 2026-11-14).
+- Illustrative cumulative dose = the selected environment's measured daily dose × mission day, labelled as an illustration that assumes every mission day is like this measured day at this instrument, and not a personal dose record.
+- ISS readings above 100 µGy/h: on 1 Dec 2022 all 82 fall between latitude 13°S–40°S and longitude 24°W–73°W, so the panel says in plain words that they were taken over southern South America and the nearby South Atlantic Ocean, labelled as an observation from the data, not a NASA statement. The sentence is shown only if at least 90% of the high readings fall inside that area.
+- RadLab timestamps carry no time zone, and RadLab does not state one. Show them as "RadLab timestamps", without claiming UTC.
+- RadLab data covers historical periods. Present it as measured on its date, not as current conditions.
+- If the live call fails, serve that environment's snapshot and label it as a snapshot.
 
 ## 7. Data model (localStorage)
 
