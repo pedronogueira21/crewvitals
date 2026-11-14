@@ -262,7 +262,12 @@ export type Indicator = {
   id: IndicatorId
   name: string
   howToMeasure: string
+  /** Steps for any reading outside the green range. */
   selfCare: string[]
+  /** Extra steps shown first, only for a reading below the green range. */
+  selfCareLow?: string[]
+  /** Extra steps shown first, only for a reading above the green range. */
+  selfCareHigh?: string[]
 }
 
 export const INDICATORS: Indicator[] = [
@@ -293,10 +298,14 @@ export const INDICATORS: Indicator[] = [
     name: 'Blood glucose',
     howToMeasure:
       'Clean and dry your fingertip, then use the glucose meter. Mark the reading as fasting if you have had nothing but water for at least 8 hours.',
-    selfCare: [
-      'Wash and dry your hands, then repeat the test.',
-      'If the reading is low, eat or drink a fast-acting carbohydrate and test again after 15 minutes.',
-      'Note what you last ate and when.',
+    selfCare: ['Wash and dry your hands, then repeat the test.', 'Note what you last ate and when.'],
+    // CLINICAL REVIEW NEEDED: the low/high steps below were added in M5 and
+    // must be reviewed by the team's biomedical engineer before submission.
+    selfCareLow: ['Eat or drink a fast-acting carbohydrate, then test again after 15 minutes.'],
+    selfCareHigh: [
+      'Drink water, and avoid sugary food and drinks until you test again.',
+      'Check that you chose fasting or not fasting correctly. The reference range depends on it.',
+      'Note any unusual thirst, frequent urination or tiredness, and report it.',
     ],
   },
   {
@@ -356,6 +365,24 @@ export function guidanceFor(readings: Reading[]): string {
     .filter((r) => r.status === status)
     .every((r) => TREND_ONLY_ESCALATION.includes(r.indicatorId))
   return selfCareOnly ? SELF_CARE_GUIDANCE[status] : GUIDANCE[status]
+}
+
+/** Whether a reading part is below or above its green range, or inside it. */
+export function directionOf(part: ReadingPart): 'low' | 'high' | null {
+  const { low, high } = greenRange(part.measure)
+  if (part.value < low) return 'low'
+  if (high !== undefined && part.value > high) return 'high'
+  return null
+}
+
+/** Self-care steps for a reading: direction-specific steps first, then the general ones. */
+export function selfCareSteps(indicator: Indicator, reading: Reading): string[] {
+  const directions = new Set(reading.parts.map(directionOf))
+  return [
+    ...(directions.has('low') ? (indicator.selfCareLow ?? []) : []),
+    ...(directions.has('high') ? (indicator.selfCareHigh ?? []) : []),
+    ...indicator.selfCare,
+  ]
 }
 
 export function roundTo(value: number, decimals: number): number {

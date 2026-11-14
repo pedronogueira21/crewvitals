@@ -1,7 +1,7 @@
 // Checks the status rules against the table in SPEC.md section 4, at every boundary.
 import { describe, expect, it } from 'vitest'
 import type { Entry } from '../types'
-import { MEASURES, greenRangeText, isUrgent, readIndicator, statusOf } from './indicators'
+import { INDICATORS, MEASURES, greenRangeText, isUrgent, readIndicator, selfCareSteps, statusOf } from './indicators'
 import type { MeasureId, Status } from './indicators'
 
 const base: Entry = { missionDay: 1, date: '2026-11-14', simulated: false }
@@ -124,5 +124,23 @@ describe('green range text shown in the UI', () => {
     expect(greenRangeText(MEASURES.temperatureC)).toBe('36.0–37.5')
     expect(greenRangeText(MEASURES.sleepHours)).toBe('≥ 7.0')
     expect(greenRangeText(MEASURES.mood)).toBe('4–5')
+  })
+})
+
+describe('glucose self-care depends on direction', () => {
+  const glucose = INDICATORS.find((i) => i.id === 'glucose')!
+  const steps = (value: number, fasting: boolean) =>
+    selfCareSteps(glucose, readIndicator('glucose', { ...base, glucose: value, glucoseFasting: fasting })!)
+  it('fast-acting carbohydrate only for low readings', () => {
+    expect(steps(60, true).join(' ')).toMatch(/fast-acting carbohydrate/)
+    expect(steps(110, true).join(' ')).not.toMatch(/fast-acting carbohydrate/)
+    expect(steps(250, false).join(' ')).not.toMatch(/fast-acting carbohydrate/)
+  })
+  it('high readings get the high steps, low readings do not', () => {
+    expect(steps(110, true)).toEqual(expect.arrayContaining(glucose.selfCareHigh!))
+    expect(steps(60, true)).toEqual(expect.not.arrayContaining(glucose.selfCareHigh!))
+  })
+  it('general steps for both directions', () => {
+    for (const v of [60, 110]) expect(steps(v, true)).toEqual(expect.arrayContaining(glucose.selfCare))
   })
 })

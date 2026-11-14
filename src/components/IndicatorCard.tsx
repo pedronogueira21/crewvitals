@@ -1,4 +1,4 @@
-import { REFERENCE_RANGE_LABEL, guidanceFor } from '../content/indicators'
+import { REFERENCE_RANGE_LABEL, guidanceFor, selfCareSteps } from '../content/indicators'
 import type { Indicator, Reading } from '../content/indicators'
 import RangeGauge from './RangeGauge'
 import SimulatedTag from './SimulatedTag'
@@ -61,7 +61,7 @@ export default function IndicatorCard({
         <div className="text-sm">
           <p className="font-semibold">Self-care steps</p>
           <ul className="mt-1 list-disc space-y-1 pl-5 text-muted">
-            {indicator.selfCare.map((step) => (
+            {selfCareSteps(indicator, reading).map((step) => (
               <li key={step}>{step}</li>
             ))}
           </ul>

@@ -5,10 +5,11 @@ import type { RegionState } from '../components/BodyFigure'
 import RadiationPanel from '../components/RadiationPanel'
 import RelatedStudies from '../components/RelatedStudies'
 import SimulatedTag from '../components/SimulatedTag'
+import SourcedList from '../components/SourcedList'
 import SpaceWeatherBanner from '../components/SpaceWeatherBanner'
 import StatusBadge from '../components/StatusBadge'
-import { HAZARDS, REGIONS, sourceOf } from '../content/evidence'
-import type { Region, RegionId, Statement } from '../content/evidence'
+import { HAZARDS, REGIONS } from '../content/evidence'
+import type { Region, RegionId } from '../content/evidence'
 import { INDICATORS, guidanceFor, readIndicator, worstStatus } from '../content/indicators'
 import type { Reading } from '../content/indicators'
 import { formatDate } from '../lib/mission'
@@ -80,29 +81,6 @@ function RegionLegend() {
           <li key={state} className="flex items-center gap-1.5">
             <Icon aria-hidden="true" size={14} strokeWidth={2.5} className={text} />
             {label}
-          </li>
-        )
-      })}
-    </ul>
-  )
-}
-
-function SourcedList({ statements }: { statements: Statement[] }) {
-  return (
-    <ul className="flex flex-col gap-3">
-      {statements.map((s) => {
-        const source = sourceOf(s)
-        return (
-          <li key={s.text} className="border-l-2 border-line pl-3">
-            <p>{s.text}</p>
-            {source && (
-              <p className="mt-1 text-sm text-muted">
-                Source:{' '}
-                <a href={source.url} target="_blank" rel="noopener noreferrer" className="text-accent underline">
-                  {source.title}
-                </a>
-              </p>
-            )}
           </li>
         )
       })}

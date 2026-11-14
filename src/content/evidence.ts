@@ -29,3 +29,6 @@ export const REGIONS = raw.regions as Region[]
 export function sourceOf(statement: Statement): Source | undefined {
   return SOURCES[statement.source]
 }
+
+/** Care far from Earth: NASA statements and the team's rationale for how the app escalates. */
+export const ESCALATION: { nasa: Statement[]; team: string } = raw.escalation
