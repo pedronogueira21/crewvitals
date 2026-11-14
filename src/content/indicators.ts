@@ -1,8 +1,8 @@
 // Indicators, thresholds, guidance and self-care text (SPEC.md section 4).
 // This is the one place to edit them.
 //
-// REVIEW NEEDED: the team's biomedical engineer must review every threshold
-// and every self-care step in this file before submission.
+// Thresholds and guidance were reviewed by the team's biomedical engineer on
+// 14 Nov 2026. Changes to this file need the same review.
 //
 // The thresholds are terrestrial adult clinical reference ranges. They are not
 // NASA flight rules and must not be presented as such.
@@ -50,7 +50,6 @@ export const RED_TREND_OVERALL = (count: number, setting: MissionSetting) =>
   `${count === 1 ? 'A red trend alert is' : `${count} red trend alerts are`} active: ${forSetting('inform the Crew Medical Officer and report to the flight surgeon on the ground.', setting)} See the trend alerts below.`
 
 // Trend alerts (SPEC.md section 4, evaluated on the last 3 entries).
-// REVIEW NEEDED: the team must review these texts with the thresholds.
 const ESCALATE = 'Inform the Crew Medical Officer and report to the flight surgeon on the ground.'
 
 export const TREND_TEXT = {
@@ -256,8 +255,8 @@ export const MOOD_LABELS: Record<1 | 2 | 3 | 4 | 5, string> = {
 // Indicators: the six things shown on the dashboard and the check-in form.
 // The ids match the indicator ids used in evidence.json.
 //
-// `howToMeasure` and `selfCare` are the team's own general wellness text.
-// They are DRAFTS for the team to edit, and they are not NASA statements.
+// `howToMeasure` and `selfCare` are general wellness text, not NASA statements.
+// They were drafted with Claude and reviewed by the team's biomedical engineer.
 // ---------------------------------------------------------------------------
 
 export type IndicatorId =
@@ -308,10 +307,13 @@ export const INDICATORS: Indicator[] = [
     name: 'Blood glucose',
     howToMeasure:
       'Clean and dry your fingertip, then use the glucose meter. Mark the reading as fasting if you have had nothing but water for at least 8 hours.',
-    selfCare: ['Wash and dry your hands, then repeat the test.', 'Note what you last ate and when.'],
-    // CLINICAL REVIEW NEEDED: the low/high steps below were added in M5 and
-    // must be reviewed by the team's biomedical engineer before submission.
-    selfCareLow: ['Eat or drink a fast-acting carbohydrate, then test again after 15 minutes.'],
+    selfCare: [
+      'If the reading seems unexpected, wash and dry your hands before repeating the test.',
+      'Note what you last ate and when.',
+    ],
+    selfCareLow: [
+      'Eat or drink a fast-acting carbohydrate, such as 15 g of glucose tablets or half a cup of fruit juice, then test again after 15 minutes.',
+    ],
     selfCareHigh: [
       'Drink water, and avoid sugary food and drinks until you test again.',
       'Check that you chose fasting or not fasting correctly. The reference range depends on it.',

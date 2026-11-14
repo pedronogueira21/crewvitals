@@ -1,10 +1,6 @@
 import { useState } from 'react'
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
-  Cell,
-  LabelList,
   Line,
   LineChart,
   ReferenceLine,
@@ -92,7 +88,7 @@ export default function RadiationPanel() {
         </p>
       )}
 
-      <DoseBars all={all} selected={selected} />
+      <DoseBars all={all} selected={selected} onSelect={setSelected} />
 
       <fieldset>
         <legend className="mb-2 text-sm font-semibold">Show details for</legend>
@@ -146,39 +142,54 @@ export function ModesTag({ all }: { all: Loaded<EnvironmentDose>[] }) {
   )
 }
 
-function DoseBars({ all, selected }: { all: { env: (typeof RADIATION_ENVIRONMENTS)[number]; loaded: Loaded<EnvironmentDose> }[]; selected: EnvironmentId }) {
+/**
+ * Measured daily dose of the six environments as bars. Each bar is a button:
+ * click, Enter or Space selects that environment, like the picker below.
+ */
+function DoseBars({
+  all,
+  selected,
+  onSelect,
+}: {
+  all: { env: (typeof RADIATION_ENVIRONMENTS)[number]; loaded: Loaded<EnvironmentDose> }[]
+  selected: EnvironmentId
+  onSelect: (id: EnvironmentId) => void
+}) {
   const rows = all.flatMap(({ env, loaded }) =>
     loaded.state === 'ready' ? [{ id: env.id, name: env.name, dose: daily(loaded.result.data.dailyDose) }] : [],
   )
   if (rows.length === 0) return <p className="text-sm text-muted">Loading radiation data…</p>
-  const label = `Measured daily dose on ${DAY_TEXT}: ${rows.map((r) => `${r.name} ${n1(r.dose)} µGy`).join('; ')}.`
+  const top = Math.max(...rows.map((r) => r.dose))
 
   return (
     <div>
-      <p className="mb-1 text-sm font-semibold">Measured dose for the day, µGy</p>
-      <div role="img" aria-label={label} style={{ height: rows.length * 34 + 16 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={rows} layout="vertical" margin={{ top: 4, right: 56, bottom: 4, left: 4 }}>
-            <XAxis type="number" hide domain={[0, 'dataMax']} />
-            <YAxis
-              type="category"
-              dataKey="name"
-              width={150}
-              tick={{ fill: 'var(--color-ink)', fontSize: 12 }}
-              tickLine={false}
-              axisLine={false}
-            />
-            <Bar dataKey="dose" isAnimationActive={false} barSize={18}>
-              {rows.map((r) => (
-                <Cell
-                  key={r.id}
-                  fill={r.id === selected ? 'var(--color-accent)' : 'color-mix(in srgb, var(--color-accent) 40%, var(--color-panel))'}
+      <p id="dose-bars-heading" className="mb-2 text-sm font-semibold">
+        Measured dose for the day, µGy <span className="font-normal text-muted">(select a bar for details)</span>
+      </p>
+      <div role="group" aria-labelledby="dose-bars-heading" className="flex flex-col gap-1">
+        {rows.map((r) => {
+          const isSelected = r.id === selected
+          return (
+            <button
+              key={r.id}
+              type="button"
+              aria-pressed={isSelected}
+              aria-label={`${r.name}: ${n1(r.dose)} µGy. Show details`}
+              onClick={() => onSelect(r.id)}
+              className="grid grid-cols-[minmax(0,9.5rem)_1fr] items-center gap-2 rounded-md px-1 py-0.5 text-left text-sm hover:bg-raised sm:grid-cols-[11rem_1fr]"
+            >
+              <span className={`truncate ${isSelected ? 'font-semibold text-ink' : 'text-muted'}`}>{r.name}</span>
+              <span className="flex items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className={`h-4 rounded-sm ${isSelected ? 'bg-accent' : 'bg-accent/40'}`}
+                  style={{ width: `${(r.dose / top) * 80}%` }}
                 />
-              ))}
-              <LabelList dataKey="dose" position="right" fill="var(--color-ink)" fontSize={12} formatter={(v) => n1(Number(v))} />
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+                <span className="shrink-0 tabular-nums">{n1(r.dose)}</span>
+              </span>
+            </button>
+          )
+        })}
       </div>
       {rows.length < all.length && <p className="text-xs text-muted">Some environments are still loading or unavailable.</p>}
     </div>

@@ -4,7 +4,7 @@ A web app that lets an astronaut on a long-duration mission self-assess their he
 
 **Live site: https://crewvitals.pages.dev**
 
-> **This is a hackathon prototype, not a medical device.** Alert thresholds are terrestrial adult clinical reference ranges ("Reference range: adult clinical reference, Earth-based"), not NASA flight rules or spaceflight-specific limits. Crew data in the demo is simulated.
+> **This is a hackathon prototype, not a medical device.** Alert thresholds are terrestrial adult clinical reference ranges ("Reference range: adult clinical reference, Earth-based"), not NASA flight rules or spaceflight-specific limits. Thresholds and guidance were reviewed by the team's biomedical engineer on 14 Nov 2026. Crew data in the demo is simulated.
 
 ## What it does
 
@@ -64,7 +64,7 @@ Cloudflare Pages, connected to this GitHub repository:
 
 ## Editing content
 
-- Thresholds, guidance, self-care steps and trend-alert texts: `src/content/indicators.ts`, the one place to edit them. They must be reviewed by the team's biomedical engineer before submission.
+- Thresholds, guidance, self-care steps and trend-alert texts: `src/content/indicators.ts`, the one place to edit them. Thresholds and guidance were reviewed by the team's biomedical engineer on 14 Nov 2026; any change needs the same review.
 - Spaceflight context: `src/content/evidence.json`. Render it as written; check every NASA statement against its source page.
 - Body map figure: `src/assets/body.svg` can be replaced by another drawing without code changes, as long as it keeps the six region ids (`head`, `heart`, `abdomen`, `core`, `bones`, `whole-body`). The comment at the top of the file explains the rest.
 
@@ -77,4 +77,5 @@ Cloudflare Pages, connected to this GitHub repository:
 - Claude also drafted the team's design rationale texts in `src/content/evidence.json` ("Why we track this" in the body map, "How the app escalates" on the About page). The app labels them as the team's rationale, drafted with Claude, and not NASA statements.
 - Body map figure. Schematic figure drawn in code with AI assistance.
 - No images were generated with AI, and the app uses no NASA logos, insignia or mission patches.
+- Gemini (Google) was used by the team's biomedical engineer as an aid when reviewing the thresholds and guidance (review completed 14 Nov 2026).
 - The app itself uses no AI: statuses, alerts and guidance come from fixed rules in `src/content/indicators.ts`.

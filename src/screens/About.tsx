@@ -106,7 +106,7 @@ export default function About() {
         <p>
           <span className="font-semibold">{REFERENCE_RANGE_LABEL}.</span> The green, yellow and red thresholds are
           terrestrial adult clinical reference ranges. They are not NASA flight rules and not limits defined for
-          spaceflight. The guidance and self-care steps are general wellness text, drafted with AI assistance (see Use of AI below).
+          spaceflight. The guidance and self-care steps are general wellness text, drafted with AI assistance (see Use of AI below). Thresholds and guidance were reviewed by the team's biomedical engineer on 14 Nov 2026.
         </p>
         <p>
           Data loaded with "Load demo mission" is simulated crew data, and is labelled "Simulated crew data"
@@ -187,6 +187,10 @@ export default function About() {
           <li>
             Claude also drafted the team's design rationale texts ("Why we track this" in the body map and "How the
             app escalates" on this page). They are labelled as our rationale, not NASA statements.
+          </li>
+          <li>
+            Gemini (Google) was used by the team's biomedical engineer as an aid when reviewing the thresholds and
+            guidance (review completed 14 Nov 2026).
           </li>
           <li>The body map figure is a schematic drawn in code with AI assistance.</li>
           <li>No images were generated with AI, and the app uses no NASA logos, insignia or mission patches.</li>

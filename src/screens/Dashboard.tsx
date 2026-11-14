@@ -6,6 +6,7 @@ import DataControls from '../components/DataControls'
 import IndicatorCard from '../components/IndicatorCard'
 import RadiationPanel from '../components/RadiationPanel'
 import SimulatedTag from '../components/SimulatedTag'
+import { ESCALATION, sourceOf } from '../content/evidence'
 import SpaceWeatherBanner from '../components/SpaceWeatherBanner'
 import StatusBadge from '../components/StatusBadge'
 import TrendAlerts from '../components/TrendAlerts'
@@ -144,6 +145,46 @@ export default function Dashboard() {
 
 const MISSION_SETTINGS: MissionSetting[] = ['ISS', 'Lunar surface', 'Mars transit']
 
+/** The NASA statement about the communication delay, from the escalation block of evidence.json. */
+const DELAY_STATEMENT = ESCALATION.nasa.find((s) => /communication/i.test(s.text))
+
+/** One line saying what the current mission setting changes. */
+function MissionSettingEffect({ setting }: { setting: MissionSetting }) {
+  if (setting === 'ISS') return <p className="basis-full text-sm">Standard guidance.</p>
+  if (setting === 'Lunar surface') {
+    return (
+      <p className="basis-full text-sm">
+        Standard guidance. No measured lunar-surface radiation data exists; see the{' '}
+        <a href="#radiation-heading" className="text-accent underline">
+          radiation panel
+        </a>
+        .
+      </p>
+    )
+  }
+  const source = DELAY_STATEMENT && sourceOf(DELAY_STATEMENT)
+  return (
+    <div className="basis-full text-sm">
+      <p>Red alerts add a reminder that communication with the ground is delayed and the onboard procedure comes first.</p>
+      {DELAY_STATEMENT && (
+        <p className="mt-1 border-l-2 border-line pl-3">
+          <span className="text-muted">Paraphrased from NASA: </span>
+          {DELAY_STATEMENT.text}
+          {source && (
+            <>
+              {' '}
+              <span className="text-muted">Source: </span>
+              <a href={source.url} target="_blank" rel="noopener noreferrer" className="text-accent underline">
+                {source.title}
+              </a>
+            </>
+          )}
+        </p>
+      )}
+    </div>
+  )
+}
+
 function MissionSettingSelect() {
   const { settings, setMissionSetting } = useStore()
   const [error, setError] = useState<string>()
@@ -164,9 +205,7 @@ function MissionSettingSelect() {
           ))}
         </select>
       </label>
-      {settings.setting === 'Mars transit' && (
-        <p className="text-sm">Red guidance adds that communication with the ground is delayed.</p>
-      )}
+      <MissionSettingEffect setting={settings.setting} />
       {error && (
         <p role="alert" className="basis-full text-sm text-alert">
           {error}

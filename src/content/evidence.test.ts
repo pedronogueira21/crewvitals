@@ -1,7 +1,7 @@
 // evidence.json must fit what the body map renders (SPEC.md section 5).
 import { describe, expect, it } from 'vitest'
 import bodySvg from '../assets/body.svg?raw'
-import { HAZARDS, REGION_IDS, REGIONS, SOURCES } from './evidence'
+import { ESCALATION, HAZARDS, REGION_IDS, REGIONS, SOURCES } from './evidence'
 import { INDICATORS } from './indicators'
 
 describe('evidence.json', () => {
@@ -23,6 +23,10 @@ describe('evidence.json', () => {
       for (const id of r.hazards) expect(hazardIds, r.id).toContain(id)
       expect(r.team.length, r.id).toBeGreaterThan(0)
     }
+  })
+  it('the escalation block has a sourced statement about the communication delay (Mars transit line)', () => {
+    const delay = ESCALATION.nasa.find((s) => /communication/i.test(s.text))
+    expect(delay && SOURCES[delay.source]?.url).toMatch(/^https:\/\//)
   })
   it('every indicator appears in exactly one region', () => {
     const used = REGIONS.flatMap((r) => r.indicators).sort()

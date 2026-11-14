@@ -34,7 +34,7 @@ A "Load demo mission" button fills 30 mission days of simulated data, including 
 ## 4. Indicators and status rules
 
 Status is green / yellow / red. Thresholds live in `src/content/indicators.ts` so the team can edit them in one place.
-**The team's biomedical engineer must review this table before submission.**
+**The team's biomedical engineer reviewed this table and the guidance on 14 Nov 2026 (with Gemini as an aid). Any change needs the same review.**
 
 | Indicator | Input | Green | Yellow | Red |
 |---|---|---|---|---|
