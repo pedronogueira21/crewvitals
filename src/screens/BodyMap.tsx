@@ -63,6 +63,7 @@ export default function BodyMap() {
             onSelect={setSelected}
           />
           <RegionLegend />
+          <p className="mt-3 text-xs text-muted">Schematic figure drawn in code with AI assistance.</p>
         </div>
         <RegionPanel key={region.id} region={region} latest={latest} />
       </div>
