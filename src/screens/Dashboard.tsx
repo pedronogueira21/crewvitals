@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useLocation } from 'react-router'
+import DataControls from '../components/DataControls'
 import IndicatorCard from '../components/IndicatorCard'
+import SimulatedTag from '../components/SimulatedTag'
 import StatusBadge from '../components/StatusBadge'
+import TrendAlerts from '../components/TrendAlerts'
 import UrgentNotice from '../components/UrgentNotice'
-import { GUIDANCE, INDICATORS, readIndicator, worstStatus } from '../content/indicators'
+import { INDICATORS, guidanceFor, readIndicator, worstStatus } from '../content/indicators'
 import { formatDate, missionDayOn, todayISO } from '../lib/mission'
+import { trendAlerts } from '../lib/trends'
 import { useStore } from '../state/store'
 
 const primaryButton =
@@ -32,6 +36,7 @@ export default function Dashboard() {
   const overall = worstStatus(logged.map((r) => r.status))
   const urgent = logged.some((r) => r.urgent)
   const notLogged = cards.length - logged.length
+  const alerts = trendAlerts(entries)
 
   return (
     <div className="flex flex-col gap-8">
@@ -63,16 +68,12 @@ export default function Dashboard() {
               {notLogged > 0 && ` ${notLogged} not logged.`}
             </p>
             {urgent && <UrgentNotice />}
-            <p className="max-w-[70ch]">{GUIDANCE[overall]}</p>
+            <p className="max-w-[70ch]">{guidanceFor(logged)}</p>
             <p className="text-sm text-muted">
               From the check-in for mission day {latest.missionDay} ({formatDate(latest.date)}).
               {latest.date !== today && ' Nothing is logged for today yet.'}
             </p>
-            {latest.simulated && (
-              <p className="self-start rounded-sm border border-line px-2 py-0.5 text-sm">
-                Simulated crew data
-              </p>
-            )}
+            {latest.simulated && <SimulatedTag />}
             <Link to="/check-in" className={`${primaryButton} self-start`}>
               {latest.date === today ? "Update today's check-in" : "Log today's check-in"}
             </Link>
@@ -87,18 +88,25 @@ export default function Dashboard() {
         )}
       </section>
 
+      {latest && <TrendAlerts alerts={alerts} simulated={entries.slice(-3).some((e) => e.simulated)} />}
+
       <section aria-labelledby="indicators-heading">
         <h2 id="indicators-heading" className="font-display text-lg font-semibold">
           Indicators
         </h2>
         <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map(({ indicator, reading }) => (
-            <IndicatorCard key={indicator.id} indicator={indicator} reading={reading} />
+            <IndicatorCard
+              key={indicator.id}
+              indicator={indicator}
+              reading={reading}
+              simulated={latest?.simulated ?? false}
+            />
           ))}
         </div>
       </section>
 
-      {entries.length > 0 && <ClearData count={entries.length} />}
+      <DataControls />
     </div>
   )
 }
@@ -172,45 +180,5 @@ function MissionStart() {
         </p>
       )}
     </form>
-  )
-}
-
-function ClearData({ count }: { count: number }) {
-  const { clearData } = useStore()
-  const [confirming, setConfirming] = useState(false)
-
-  return (
-    <section aria-label="Stored data" className="flex flex-wrap items-center gap-3 text-sm text-muted">
-      {confirming ? (
-        <>
-          <p role="alert" className="text-ink">
-            Delete {count === 1 ? 'your 1 check-in' : `all ${count} check-ins`} and restart the mission
-            today? This cannot be undone.
-          </p>
-          <button
-            type="button"
-            className={quietButton}
-            onClick={() => {
-              clearData()
-              setConfirming(false)
-            }}
-          >
-            Delete data
-          </button>
-          <button type="button" className={quietButton} onClick={() => setConfirming(false)}>
-            Keep data
-          </button>
-        </>
-      ) : (
-        <>
-          <p>
-            {count === 1 ? '1 check-in is' : `${count} check-ins are`} stored in this browser.
-          </p>
-          <button type="button" className={quietButton} onClick={() => setConfirming(true)}>
-            Clear data
-          </button>
-        </>
-      )}
-    </section>
   )
 }

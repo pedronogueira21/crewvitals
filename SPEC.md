@@ -46,18 +46,21 @@ Status is green / yellow / red. Thresholds live in `src/content/indicators.ts` s
 | Sleep | hours in last 24 h | ≥ 7.0 | 6.0–6.9 | < 6.0 |
 | Mood | self-report, 1 (very low) to 5 (very good) | 4–5 | 3 | 1–2 |
 
-Trend rules (evaluated on the last 3 entries):
+Trend rules (evaluated on the last 3 entries, which must fall on 3 consecutive mission days with the indicator logged in all three):
 
 - Any indicator red on 3 consecutive days → escalation message.
-- Sleep < 6 h on 3 consecutive days → sleep-debt alert.
-- Mood ≤ 2 on 3 consecutive days → behavioral-health alert.
-- Blood pressure or heart rate yellow or worse on 3 consecutive days → cardiovascular trend alert.
+- Sleep < 6 h on 3 consecutive days → sleep-debt alert. (Sleep < 6 h is exactly sleep red, so this alert replaces the generic escalation for sleep.)
+- Mood ≤ 2 on 3 consecutive days → behavioral-health alert. (Mood ≤ 2 is exactly mood red, so this alert replaces the generic escalation for mood.)
+- Blood pressure or heart rate yellow or worse on 3 consecutive days → cardiovascular trend alert, checked per indicator. Not shown for an indicator that already has an escalation.
+
+Escalation, sleep-debt and behavioral-health alerts tell the user to inform the Crew Medical Officer and report to the flight surgeon on the ground. Alert texts are editable strings in `indicators.ts` and need the same review as the thresholds.
 
 Guidance shown per status:
 
 - Green: "Within reference range. Keep your routine."
 - Yellow: "Outside the reference range. Re-measure, review the self-care steps below, and log again tomorrow."
 - Red: "Well outside the reference range. Re-measure now. If confirmed, inform the Crew Medical Officer and report to the flight surgeon on the ground."
+- Red for Sleep or Mood: "Well below the reference range. Follow the self-care steps and log again tomorrow." A single red Sleep or Mood reading never says "Re-measure now" or refers the user to the Crew Medical Officer; escalation for these two comes only from the 3-day trend rules. The overall status uses this text when Sleep or Mood are the only red indicators.
 - Blood pressure SBP ≥ 180 or DBP ≥ 120, glucose < 54, temperature ≥ 39.0 → "Urgent: inform the Crew Medical Officer now."
 
 Self-care steps per indicator are short editable strings in `indicators.ts`.

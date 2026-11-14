@@ -1,15 +1,19 @@
-import { GUIDANCE, REFERENCE_RANGE_LABEL } from '../content/indicators'
+import { REFERENCE_RANGE_LABEL, guidanceFor } from '../content/indicators'
 import type { Indicator, Reading } from '../content/indicators'
 import RangeGauge from './RangeGauge'
+import SimulatedTag from './SimulatedTag'
 import StatusBadge, { STATUS_UI } from './StatusBadge'
 import UrgentNotice from './UrgentNotice'
 
 export default function IndicatorCard({
   indicator,
   reading,
+  simulated,
 }: {
   indicator: Indicator
   reading: Reading | null
+  /** True when the reading comes from simulated crew data. */
+  simulated: boolean
 }) {
   if (!reading) {
     return (
@@ -41,6 +45,8 @@ export default function IndicatorCard({
         {reading.note && <span className="text-sm text-muted">({reading.note})</span>}
       </p>
 
+      {simulated && <SimulatedTag />}
+
       <div className="flex flex-col gap-2">
         {reading.parts.map((part) => (
           <RangeGauge key={part.measure.id} part={part} showLabel={reading.parts.length > 1} />
@@ -49,7 +55,7 @@ export default function IndicatorCard({
 
       {reading.urgent && <UrgentNotice />}
 
-      <p className="text-sm">{GUIDANCE[reading.status]}</p>
+      <p className="text-sm">{guidanceFor([reading])}</p>
 
       {needsAction && (
         <div className="text-sm">

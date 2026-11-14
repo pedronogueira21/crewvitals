@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { formatDate, isISODate, missionDayOn, todayISO } from '../lib/mission'
+import { demoMission } from '../lib/demo'
+import { formatDate,isISODate, missionDayOn, todayISO } from '../lib/mission'
 import {
   clearAll,
   loadEntries,
@@ -25,6 +26,8 @@ type Store = {
   setMissionStart: (date: string) => Result
   /** Deletes every entry and restarts the mission today. */
   clearData: () => void
+  /** Replaces all data with 30 days of simulated crew data ending today. */
+  loadDemo: () => Result
 }
 
 const StoreContext = createContext<Store | null>(null)
@@ -72,9 +75,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setSettings(loadSettings())
   }, [])
 
+  const loadDemo = useCallback((): Result => {
+    const demo = demoMission(todayISO())
+    const nextSettings = { ...settings, missionStart: demo.missionStart }
+    if (!saveSettings(nextSettings) || !saveEntries(demo.entries)) {
+      return { ok: false, error: STORAGE_ERROR }
+    }
+    setSettings(nextSettings)
+    setEntries(demo.entries)
+    return { ok: true }
+  }, [settings])
+
   const store = useMemo(
-    () => ({ entries, settings, saveEntry, setMissionStart, clearData }),
-    [entries, settings, saveEntry, setMissionStart, clearData],
+    () => ({ entries, settings, saveEntry, setMissionStart, clearData, loadDemo }),
+    [entries, settings, saveEntry, setMissionStart, clearData, loadDemo],
   )
 
   return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>

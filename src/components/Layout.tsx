@@ -17,6 +17,9 @@ export default function Layout() {
           <NavLink to="/check-in" className={navLink}>
             Daily check-in
           </NavLink>
+          <NavLink to="/trends" className={navLink}>
+            Trends
+          </NavLink>
         </nav>
       </header>
 

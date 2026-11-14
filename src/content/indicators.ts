@@ -22,6 +22,39 @@ export const GUIDANCE: Record<Status, string> = {
 
 export const URGENT_GUIDANCE = 'Urgent: inform the Crew Medical Officer now.'
 
+/**
+ * Sleep and mood: a single red reading gets this text instead of GUIDANCE.red.
+ * They escalate only through the 3-day trend rules below.
+ */
+export const SELF_CARE_RED =
+  'Well below the reference range. Follow the self-care steps and log again tomorrow.'
+
+/** Indicators whose red status escalates only through the trend rules. */
+export const TREND_ONLY_ESCALATION: IndicatorId[] = ['sleep', 'mood']
+
+// Trend alerts (SPEC.md section 4, evaluated on the last 3 entries).
+// REVIEW NEEDED: the team must review these texts with the thresholds.
+const ESCALATE = 'Inform the Crew Medical Officer and report to the flight surgeon on the ground.'
+
+export const TREND_TEXT = {
+  escalation: (name: string) => ({
+    title: `${name}: red on 3 consecutive days`,
+    action: ESCALATE,
+  }),
+  sleepDebt: {
+    title: 'Sleep debt: under 6 h of sleep on 3 consecutive days',
+    action: ESCALATE,
+  },
+  behavioralHealth: {
+    title: 'Behavioral health: mood 2 or lower on 3 consecutive days',
+    action: ESCALATE,
+  },
+  cardiovascular: (name: string) => ({
+    title: `Cardiovascular trend: ${name.toLowerCase()} outside the reference range on 3 consecutive days`,
+    action: 'Keep measuring every day and tell the Crew Medical Officer about the trend.',
+  }),
+}
+
 // ---------------------------------------------------------------------------
 // Measures: one number each, with its status zones.
 //
@@ -302,6 +335,18 @@ const SEVERITY: Record<Status, number> = { green: 0, yellow: 1, red: 2 }
 
 export function worstStatus(statuses: Status[]): Status {
   return statuses.reduce<Status>((worst, s) => (SEVERITY[s] > SEVERITY[worst] ? s : worst), 'green')
+}
+
+/**
+ * Guidance for one or more readings, from the worst status among them.
+ * Red caused only by sleep or mood gets the self-care text, not "re-measure now".
+ */
+export function guidanceFor(readings: Reading[]): string {
+  const status = worstStatus(readings.map((r) => r.status))
+  const redFromOthers = readings.some(
+    (r) => r.status === 'red' && !TREND_ONLY_ESCALATION.includes(r.indicatorId),
+  )
+  return status === 'red' && !redFromOthers ? SELF_CARE_RED : GUIDANCE[status]
 }
 
 export function roundTo(value: number, decimals: number): number {
