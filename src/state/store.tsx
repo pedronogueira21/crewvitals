@@ -24,6 +24,7 @@ type Store = {
   /** Adds the entry, or replaces the entry already logged for that date. */
   saveEntry: (entry: Entry) => Result
   setMissionStart: (date: string) => Result
+  setMissionSetting: (setting: Settings['setting']) => Result
   /** Deletes every entry and restarts the mission today. */
   clearData: () => void
   /** Replaces all data with 30 days of simulated crew data ending today. */
@@ -75,6 +76,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setSettings(loadSettings())
   }, [])
 
+  const setMissionSetting = useCallback(
+    (setting: Settings['setting']): Result => {
+      const next = { ...settings, setting }
+      if (!saveSettings(next)) return { ok: false, error: STORAGE_ERROR }
+      setSettings(next)
+      return { ok: true }
+    },
+    [settings],
+  )
+
   const loadDemo = useCallback((): Result => {
     const demo = demoMission(todayISO())
     const nextSettings = { ...settings, missionStart: demo.missionStart }
@@ -87,8 +98,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [settings])
 
   const store = useMemo(
-    () => ({ entries, settings, saveEntry, setMissionStart, clearData, loadDemo }),
-    [entries, settings, saveEntry, setMissionStart, clearData, loadDemo],
+    () => ({ entries, settings, saveEntry, setMissionStart, setMissionSetting, clearData, loadDemo }),
+    [entries, settings, saveEntry, setMissionStart, setMissionSetting, clearData, loadDemo],
   )
 
   return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>

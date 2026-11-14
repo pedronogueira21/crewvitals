@@ -13,6 +13,7 @@ import UrgentNotice from '../components/UrgentNotice'
 import {
   INDICATORS,
   RED_TREND_OVERALL,
+  type MissionSetting,
   guidanceFor,
   readIndicator,
   worstStatus,
@@ -61,6 +62,7 @@ export default function Dashboard() {
           Mission day {missionDay}
         </h1>
         <MissionStart />
+        <MissionSettingSelect />
       </section>
 
       <SpaceWeatherBanner />
@@ -84,7 +86,7 @@ export default function Dashboard() {
               <p className="flex max-w-[70ch] items-start gap-2 rounded-md border border-alert px-3 py-2 font-semibold">
                 <OctagonAlert aria-hidden="true" size={20} strokeWidth={2.5} className="mt-0.5 shrink-0 text-alert" />
                 <span>
-                  {RED_TREND_OVERALL(redTrends)}{' '}
+                  {RED_TREND_OVERALL(redTrends, settings.setting)}{' '}
                   <a href="#trend-alerts-heading" className="text-accent underline">
                     Go to trend alerts
                   </a>
@@ -93,7 +95,7 @@ export default function Dashboard() {
             )}
             <p className="max-w-[70ch]">
               {redTrends > 0 && <span className="font-semibold">Latest check-in: </span>}
-              {guidanceFor(logged)}
+              {guidanceFor(logged, settings.setting)}
             </p>
             <p className="text-sm text-muted">
               From the check-in for mission day {latest.missionDay} ({formatDate(latest.date)}).
@@ -127,6 +129,7 @@ export default function Dashboard() {
               indicator={indicator}
               reading={reading}
               simulated={latest?.simulated ?? false}
+              setting={settings.setting}
             />
           ))}
         </div>
@@ -135,6 +138,40 @@ export default function Dashboard() {
       <RadiationPanel />
 
       <DataControls />
+    </div>
+  )
+}
+
+const MISSION_SETTINGS: MissionSetting[] = ['ISS', 'Lunar surface', 'Mars transit']
+
+function MissionSettingSelect() {
+  const { settings, setMissionSetting } = useStore()
+  const [error, setError] = useState<string>()
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-3 text-muted">
+      <label className="flex items-center gap-2">
+        Mission setting
+        <select
+          value={settings.setting}
+          onChange={(e) => {
+            const result = setMissionSetting(e.target.value as MissionSetting)
+            setError(result.ok ? undefined : result.error)
+          }}
+          className="rounded-md border border-control bg-space px-3 py-1.5 text-ink"
+        >
+          {MISSION_SETTINGS.map((s) => (
+            <option key={s}>{s}</option>
+          ))}
+        </select>
+      </label>
+      {settings.setting === 'Mars transit' && (
+        <p className="text-sm">Red guidance adds that communication with the ground is delayed.</p>
+      )}
+      {error && (
+        <p role="alert" className="basis-full text-sm text-alert">
+          {error}
+        </p>
+      )}
     </div>
   )
 }

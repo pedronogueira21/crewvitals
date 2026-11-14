@@ -7,7 +7,7 @@
 // The thresholds are terrestrial adult clinical reference ranges. They are not
 // NASA flight rules and must not be presented as such.
 
-import type { Entry } from '../types'
+import type { Entry, Settings } from '../types'
 
 export type Status = 'green' | 'yellow' | 'red'
 
@@ -35,9 +35,19 @@ export const SELF_CARE_GUIDANCE: Record<'yellow' | 'red', string> = {
 /** Indicators that escalate only through the trend rules. */
 export const TREND_ONLY_ESCALATION: IndicatorId[] = ['sleep', 'mood']
 
+export type MissionSetting = Settings['setting']
+
+/** SPEC section 5: on Mars transit, every red escalation text adds this line. */
+export const MARS_TRANSIT_NOTE = 'Communication with the ground is delayed. Follow the onboard procedure first.'
+
+/** A red escalation text for the mission setting. ISS and Lunar surface leave it unchanged. */
+export function forSetting(text: string, setting: MissionSetting): string {
+  return setting === 'Mars transit' ? `${text} ${MARS_TRANSIT_NOTE}` : text
+}
+
 /** Overall status box, when at least one red trend alert is active. */
-export const RED_TREND_OVERALL = (count: number) =>
-  `${count === 1 ? 'A red trend alert is' : `${count} red trend alerts are`} active: inform the Crew Medical Officer and report to the flight surgeon on the ground. See the trend alerts below.`
+export const RED_TREND_OVERALL = (count: number, setting: MissionSetting) =>
+  `${count === 1 ? 'A red trend alert is' : `${count} red trend alerts are`} active: ${forSetting('inform the Crew Medical Officer and report to the flight surgeon on the ground.', setting)} See the trend alerts below.`
 
 // Trend alerts (SPEC.md section 4, evaluated on the last 3 entries).
 // REVIEW NEEDED: the team must review these texts with the thresholds.
@@ -358,13 +368,14 @@ export function worstStatus(statuses: Status[]): Status {
  * When that worst status comes only from sleep or mood, the self-care text is
  * used instead of "re-measure".
  */
-export function guidanceFor(readings: Reading[]): string {
+export function guidanceFor(readings: Reading[], setting: MissionSetting): string {
   const status = worstStatus(readings.map((r) => r.status))
   if (status === 'green') return GUIDANCE.green
   const selfCareOnly = readings
     .filter((r) => r.status === status)
     .every((r) => TREND_ONLY_ESCALATION.includes(r.indicatorId))
-  return selfCareOnly ? SELF_CARE_GUIDANCE[status] : GUIDANCE[status]
+  if (selfCareOnly) return SELF_CARE_GUIDANCE[status]
+  return status === 'red' ? forSetting(GUIDANCE.red, setting) : GUIDANCE[status]
 }
 
 /** Whether a reading part is below or above its green range, or inside it. */

@@ -89,6 +89,7 @@ function RegionLegend() {
 }
 
 function RegionPanel({ region, latest }: { region: Region; latest: Entry | undefined }) {
+  const { settings } = useStore()
   const state = stateOf(region, latest)
   const readings = readingsFor(region, latest)
   const hazards = HAZARDS.filter((h) => region.hazards.includes(h.id))
@@ -126,7 +127,7 @@ function RegionPanel({ region, latest }: { region: Region; latest: Entry | undef
                       </p>
                       <StatusBadge status={r.status} />
                     </div>
-                    <p className="mt-1 text-sm text-muted">{guidanceFor([r])}</p>
+                    <p className="mt-1 text-sm text-muted">{guidanceFor([r], settings.setting)}</p>
                   </li>
                 ))}
               </ul>

@@ -1,5 +1,5 @@
 import { REFERENCE_RANGE_LABEL, guidanceFor, selfCareSteps } from '../content/indicators'
-import type { Indicator, Reading } from '../content/indicators'
+import type { Indicator, MissionSetting, Reading } from '../content/indicators'
 import RangeGauge from './RangeGauge'
 import SimulatedTag from './SimulatedTag'
 import StatusBadge, { STATUS_UI } from './StatusBadge'
@@ -9,11 +9,13 @@ export default function IndicatorCard({
   indicator,
   reading,
   simulated,
+  setting,
 }: {
   indicator: Indicator
   reading: Reading | null
   /** True when the reading comes from simulated crew data. */
   simulated: boolean
+  setting: MissionSetting
 }) {
   if (!reading) {
     return (
@@ -55,7 +57,7 @@ export default function IndicatorCard({
 
       {reading.urgent && <UrgentNotice />}
 
-      <p className="text-sm">{guidanceFor([reading])}</p>
+      <p className="text-sm">{guidanceFor([reading], setting)}</p>
 
       {needsAction && (
         <div className="text-sm">

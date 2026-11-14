@@ -98,7 +98,7 @@ In every entry:
 
 Sources used: https://www.nasa.gov/humans-in-space/the-human-body-in-space/ and https://www.nasa.gov/hrp/hazards. Deeper references for the About page: https://humanresearchroadmap.nasa.gov/Risks/.
 
-"Distance from Earth" appears as a mission-setting selector (ISS / Lunar surface / Mars transit) that changes one line of the escalation guidance: on Mars transit, the red-status text adds "Communication with the ground is delayed. Follow the onboard procedure first." This selector is a stretch goal.
+"Distance from Earth" appears as a mission-setting selector (ISS / Lunar surface / Mars transit) on the dashboard, stored in `Settings.setting`, that changes one line of the escalation guidance: on Mars transit, every red escalation text adds "Communication with the ground is delayed. Follow the onboard procedure first." That covers the red guidance for a single reading, the red trend alerts, and the red-trend message in the Overall status box. The Sleep and Mood self-care texts do not refer the user to the ground, so they do not change. ISS and Lunar surface leave all texts unchanged. (Implemented after M5 as the stretch goal.)
 
 ## 6. NASA data integrations
 

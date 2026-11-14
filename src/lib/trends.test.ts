@@ -1,6 +1,15 @@
 // Trend rules, sleep/mood guidance and the demo mission (SPEC.md sections 3 and 4).
 import { describe, expect, it } from 'vitest'
-import { GUIDANCE, INDICATORS, SELF_CARE_GUIDANCE, guidanceFor, readIndicator } from '../content/indicators'
+import {
+  GUIDANCE,
+  INDICATORS,
+  MARS_TRANSIT_NOTE,
+  RED_TREND_OVERALL,
+  SELF_CARE_GUIDANCE,
+  guidanceFor as guidanceForSetting,
+  readIndicator,
+} from '../content/indicators'
+import type { Reading } from '../content/indicators'
 import type { Entry } from '../types'
 import { demoMission } from './demo'
 import { trendAlerts } from './trends'
@@ -45,6 +54,8 @@ describe('trend rules', () => {
   })
 })
 
+const guidanceFor = (readings: Reading[]) => guidanceForSetting(readings, 'ISS')
+
 describe('guidance for sleep and mood', () => {
   const read = (values: Partial<Entry>) => INDICATORS.flatMap((i) => readIndicator(i.id, day(1, values)) ?? [])
   it('red sleep or mood alone: self-care text', () => {
@@ -87,5 +98,20 @@ describe('demo mission', () => {
       INDICATORS.some((i) => readIndicator(i.id, e)?.status !== 'green'),
     ).map((e) => e.missionDay)
     expect(offDays).toEqual([6, 7, 12, 17, 18, 22, 26, 28, 29, 30])
+  })
+})
+
+describe('mission setting (SPEC section 5)', () => {
+  const read = (values: Partial<Entry>) => INDICATORS.flatMap((i) => readIndicator(i.id, day(1, values)) ?? [])
+  it('Mars transit adds the delay line to red guidance only', () => {
+    expect(guidanceForSetting(read({ temperatureC: 38.5 }), 'Mars transit')).toBe(`${GUIDANCE.red} ${MARS_TRANSIT_NOTE}`)
+    expect(guidanceForSetting(read({ temperatureC: 37.7 }), 'Mars transit')).toBe(GUIDANCE.yellow)
+    expect(guidanceForSetting(read({ sleepHours: 4 }), 'Mars transit')).toBe(SELF_CARE_GUIDANCE.red)
+    expect(RED_TREND_OVERALL(1, 'Mars transit')).toContain(MARS_TRANSIT_NOTE)
+  })
+  it('ISS and Lunar surface leave the red guidance unchanged', () => {
+    expect(guidanceForSetting(read({ temperatureC: 38.5 }), 'ISS')).toBe(GUIDANCE.red)
+    expect(guidanceForSetting(read({ temperatureC: 38.5 }), 'Lunar surface')).toBe(GUIDANCE.red)
+    expect(RED_TREND_OVERALL(1, 'Lunar surface')).not.toContain(MARS_TRANSIT_NOTE)
   })
 })
