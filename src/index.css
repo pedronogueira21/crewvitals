@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+/*
+  Palette: night-side navy with three status colours chosen to stay apart for
+  red-green colour-blind readers (blue-green, yellow, orange-red). Status is
+  never shown by colour alone: every status also has an icon and a text label.
+  Fonts are system fonts only, so the app makes no third-party requests.
+*/
+@theme {
+  --color-space: #0e1a2b;
+  --color-panel: #16263b;
+  --color-raised: #1d3049;
+  --color-line: #3f5679;
+  --color-control: #7a93b8;
+  --color-ink: #e8eef6;
+  --color-muted: #a9b8cc;
+  --color-accent: #8cc4ff;
+  --color-ok: #45d9a8;
+  --color-warn: #f4dc5a;
+  --color-alert: #ff8f66;
+
+  --font-sans: system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-display: Bahnschrift, "DIN Alternate", "Roboto Condensed", "Segoe UI", system-ui, sans-serif;
+}
+
+html {
+  color-scheme: dark;
+  background: var(--color-space);
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--color-space);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Gauge zones. Each status has its own texture as well as its own colour. */
+.zone-green {
+  background: color-mix(in srgb, var(--color-ok) 60%, transparent);
+}
+.zone-yellow {
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-warn) 65%, transparent) 0 3px,
+    color-mix(in srgb, var(--color-warn) 18%, transparent) 3px 6px
+  );
+}
+.zone-red {
+  background: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-alert) 75%, transparent) 0 2px,
+    color-mix(in srgb, var(--color-alert) 22%, transparent) 2px 4px
+  );
+}

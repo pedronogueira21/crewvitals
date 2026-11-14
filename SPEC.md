@@ -1,0 +1,167 @@
+# CrewVitals (working title) — Project Spec
+
+NASA Space Apps Challenge 2026 — Challenge: "Create Health Monitoring Software for Astronauts on Space Missions".
+
+Build a web app that lets an astronaut on a long-duration mission self-assess their health, understand what each indicator means in spaceflight, and know what to do next. All UI text is in English.
+
+## 1. Hard rules
+
+- This is a hackathon prototype, not a medical device. Show that disclaimer in the footer and on the About page.
+- Never invent NASA facts, statistics, or thresholds. Every NASA-specific statement shown in the UI must come from `src/content/evidence.json`, which the team curates by hand, and must display its source link.
+- Alert thresholds are terrestrial adult clinical reference ranges. Label them as such in the UI ("Reference range: adult clinical reference, Earth-based").
+- Crew data in the demo is simulated. Label it "Simulated crew data" wherever it appears.
+- NASA data that is fetched live is labeled "Live". NASA data embedded as a file is labeled "Snapshot — retrieved <date>". Never present a snapshot as live.
+- Do not use NASA logos, insignia, or mission patches. Do not generate images with AI.
+- No login, no accounts, no personal data sent to any server. Health entries stay in the browser (localStorage).
+
+## 2. Stack and hosting
+
+- Vite + React + TypeScript + Tailwind CSS + Recharts.
+- Hosting: Cloudflare Pages, deployed from a public GitHub repository.
+- Server-side calls to NASA APIs go through Cloudflare Pages Functions in `/functions/api/`. None of the three APIs used needs an API key (checked 2026-11-14), so there are no secrets to manage.
+- Each function caches its response (Cache API, 1 hour) and returns a typed JSON shape. If the upstream call fails, the function returns the bundled snapshot from `/public/snapshots/` with `"mode": "snapshot"`.
+
+## 3. Screens
+
+1. **Dashboard** — mission day counter, overall status, six indicator cards with traffic-light status, radiation panel, space-weather banner.
+2. **Daily check-in** — one form for the six indicators. Plain-language help text next to each field explaining how to take the measurement.
+3. **Body map** — a human figure (SVG supplied by the team at `src/assets/body.svg`, with region ids). Clicking a region opens a panel with its indicators, current status, how spaceflight affects that region, and the evidence links.
+4. **Trends** — line chart per indicator across mission days, with reference bands shaded and anomalies marked.
+5. **About / Data sources / AI use** — the disclaimer, every data source with link and live/snapshot mode, and a statement of which AI tools were used to build the app.
+
+A "Load demo mission" button fills 30 mission days of simulated data, including a few deliberate anomalies, so judges can see trends and alerts immediately. A "Clear data" button resets.
+
+## 4. Indicators and status rules
+
+Status is green / yellow / red. Thresholds live in `src/content/indicators.ts` so the team can edit them in one place.
+**The team's biomedical engineer must review this table before submission.**
+
+| Indicator | Input | Green | Yellow | Red |
+|---|---|---|---|---|
+| Blood pressure | systolic / diastolic, mmHg | SBP 90–129 and DBP 60–79 | SBP 130–139 or DBP 80–89 | SBP ≥ 140, DBP ≥ 90, SBP < 90, or DBP < 60 |
+| Resting heart rate | bpm | 50–100 | 40–49 or 101–120 | < 40 or > 120 |
+| Blood glucose (fasting) | mg/dL | 70–99 | 54–69 or 100–125 | < 54 or ≥ 126 |
+| Blood glucose (non-fasting) | mg/dL | 70–139 | 54–69 or 140–199 | < 54 or ≥ 200 |
+| Body temperature | °C | 36.0–37.5 | 35.0–35.9 or 37.6–37.9 | < 35.0 or ≥ 38.0 |
+| Sleep | hours in last 24 h | ≥ 7.0 | 6.0–6.9 | < 6.0 |
+| Mood | self-report, 1 (very low) to 5 (very good) | 4–5 | 3 | 1–2 |
+
+Trend rules (evaluated on the last 3 entries):
+
+- Any indicator red on 3 consecutive days → escalation message.
+- Sleep < 6 h on 3 consecutive days → sleep-debt alert.
+- Mood ≤ 2 on 3 consecutive days → behavioral-health alert.
+- Blood pressure or heart rate yellow or worse on 3 consecutive days → cardiovascular trend alert.
+
+Guidance shown per status:
+
+- Green: "Within reference range. Keep your routine."
+- Yellow: "Outside the reference range. Re-measure, review the self-care steps below, and log again tomorrow."
+- Red: "Well outside the reference range. Re-measure now. If confirmed, inform the Crew Medical Officer and report to the flight surgeon on the ground."
+- Blood pressure SBP ≥ 180 or DBP ≥ 120, glucose < 54, temperature ≥ 39.0 → "Urgent: inform the Crew Medical Officer now."
+
+Self-care steps per indicator are short editable strings in `indicators.ts`.
+
+## 5. Spaceflight context (body map and cards)
+
+Each indicator is linked to one or more of the five hazards of human spaceflight defined by NASA's Human Research Program: space radiation; isolation and confinement; distance from Earth; gravity fields; hostile/closed environments.
+
+| Body region (SVG id) | Indicators | Hazard(s) |
+|---|---|---|
+| `head` | Mood, Sleep | Isolation and confinement |
+| `heart` | Blood pressure, Heart rate | Gravity fields; space radiation |
+| `abdomen` | Blood glucose | Hostile/closed environments (nutrition) |
+| `core` | Body temperature | Hostile/closed environments (immune changes) |
+| `bones` | none (information only) | Gravity fields (bone and muscle loss) |
+| `whole-body` | Radiation exposure panel | Space radiation |
+
+The explanatory text and the "why this matters in space" sentence for each region come only from `src/content/evidence.json`. That file already exists and is drafted. Read it, render it, and do not rewrite or extend its text. Each entry has:
+
+- `nasa`: statements paraphrased from a NASA page, each with `source` (URL) and `sourceTitle`. Render with the source link.
+- `team`: the team's own design rationale. Render under the label "Why we track this" and never attribute it to NASA.
+- `reviewStatus`: internal, not rendered.
+
+Sources used: https://www.nasa.gov/humans-in-space/the-human-body-in-space/ and https://www.nasa.gov/hrp/hazards. Deeper references for the About page: https://humanresearchroadmap.nasa.gov/Risks/.
+
+"Distance from Earth" appears as a mission-setting selector (ISS / Lunar surface / Mars transit) that changes one line of the escalation guidance: on Mars transit, the red-status text adds "Communication with the ground is delayed. Follow the onboard procedure first." This selector is a stretch goal.
+
+## 6. NASA data integrations
+
+Endpoint status as of 2026-11-14 is noted per API. Before building against each one, call it once with curl and save the real response to `/public/snapshots/` (`donki-flr.json`, `donki-sep.json`, `osdr-<keyword>.json`, `radlab.json`). No API key is needed for any of them.
+
+### 6.1 DONKI — space weather events (confirmed working)
+
+- Function: `/functions/api/space-weather.ts`
+- Base URL: `https://ccmc.gsfc.nasa.gov/DONKI-API/get/`. DONKI moved here on 2026-09-30. Do not use `api.nasa.gov/DONKI` or `kauai.ccmc.gsfc.nasa.gov`; they no longer serve the API.
+- Solar flares: `GET https://ccmc.gsfc.nasa.gov/DONKI-API/get/FLR?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`. Returns a JSON array. Fields seen: `flrID`, `beginTime`, `peakTime`, `endTime`, `classType` (e.g. `"M1.7"`), `sourceLocation`, `activeRegionNum`, `link`, `linkedEvents`.
+- Solar energetic particle events: `GET https://ccmc.gsfc.nasa.gov/DONKI-API/get/SEP?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`. Returns a JSON array, which is `[]` when there are no events (this is the normal case; handle it).
+- Use: a banner on the dashboard, from the last 7 days.
+  - Any SEP event, or any flare whose `classType` starts with `X` → "Space weather alert", with event time, class, and the DONKI `link`.
+  - Otherwise → "No major space weather events in the last 7 days", plus the most recent flare (class and peak time) as information.
+- Credit line on the About page: "Space weather data: NASA CCMC DONKI."
+
+### 6.2 OSDR — NASA open-science studies (confirmed working)
+
+- Function: `/functions/api/studies.ts?term=<keyword>`
+- Upstream: `GET https://osdr.nasa.gov/osdr/data/search?term=<keyword>&from=0&size=5&type=cgene`
+- Response shape: `hits.total` (count) and `hits.hits[]`, each with `_source` containing `"Study Title"`, `"Accession"` (e.g. `"OSD-195"`), `"organism"`, `"Project Type"` (e.g. `"Spaceflight Study"`, `"Ground Study"`), and `"Study Description"`. Note the keys contain spaces.
+- Study link: `https://osdr.nasa.gov/bio/repo/data/studies/<Accession>` (check that one such link opens before relying on the pattern).
+- Use: each indicator panel has a "Related NASA open-science studies" list, fetched with a fixed keyword per indicator: `cardiovascular`, `glucose`, `immune`, `sleep circadian`, `behavior`, `bone loss`, `radiation`.
+- Keyword relevance is loose and many studies are on mice or are ground studies. Always show `organism` and `Project Type` next to each title, and never describe these studies as astronaut data.
+
+### 6.3 RadLab — measured radiation dose on the ISS (confirmed working)
+
+- Function: `/functions/api/radiation.ts`
+- Docs: https://visualization.osdr.nasa.gov/radlab/gui/data-api
+- Upstream: `GET https://visualization.osdr.nasa.gov/radlab/api/`
+- Key-value parameters: `spacecraft=ISS`; `instrument=DosTel` (also `instrument_family`, and `instrument_id` such as `DosTel1`, case-sensitive); `timestamp` with operators `>=`, `>`, `<`, `<=`, usable more than once; bare field names to return extra columns (`absorbed_dose_rate` in µGy/hour, `dose_equivalent_rate` in µSv/hour, `flux`, `latitude`, `longitude`, `altitude`); `format=csv` (default), `tsv`, `json`, or `html`.
+- Documented example (URL-encoded): `https://visualization.osdr.nasa.gov/radlab/api/?spacecraft=ISS&instrument=DosTel&timestamp%3E=2022-04-01T23%3A00&timestamp%3C2022-04-02T01%3A05&absorbed_dose_rate%3E2&flux&latitude&longitude&altitude&b&l&format=html`
+- Confirmed 2026-11-14 with `format=json`. The response is an object `{columns, index, data}`: `columns` is the list of column names, `data` is an array of rows (each row an array in column order), not a list of objects. Columns seen: `timestamp`, `instrument_id`, `absorbed_dose_rate`, `altitude`, `flux`, `instrument`, `latitude`, `longitude`, `spacecraft`. Map rows to objects by column name, never by position.
+- The first snapshot (`radlab.json`) used the docs example, which filters `absorbed_dose_rate>2`. That filter removes the low readings and biases the mean upward, so do not compute the mean or the cumulative dose from it. Fetch a second snapshot without that filter and over a 24-hour window (`radlab-24h.json`), and use that one for the panel. Keep the filter out of the live query too.
+- The data contains two instruments (`DosTel1`, `DosTel2`). Compute statistics per `instrument_id` and show which instrument each number comes from.
+- If the live call fails at runtime, serve the snapshot and label the panel as a snapshot.
+- Use: show the measured absorbed dose rate (µGy/h) as a small time series, and compute an illustrative cumulative dose for the current mission day from the mean rate. State the instrument, the time window of the measurements, and that the cumulative figure is illustrative.
+- RadLab data covers specific historical periods. Present it as "measured aboard the ISS, <window>", not as current conditions.
+
+## 7. Data model (localStorage)
+
+```ts
+type Entry = {
+  missionDay: number;
+  date: string;            // ISO
+  systolic?: number;
+  diastolic?: number;
+  heartRate?: number;
+  glucose?: number;
+  glucoseFasting?: boolean;
+  temperatureC?: number;
+  sleepHours?: number;
+  mood?: 1 | 2 | 3 | 4 | 5;
+  simulated: boolean;
+};
+type Settings = { missionStart: string; setting: "ISS" | "Lunar surface" | "Mars transit" };
+```
+
+## 8. Accessibility and design
+
+- Status is never conveyed by color alone: each status has an icon and a text label.
+- Color-blind-safe palette; contrast at WCAG AA.
+- Works on a phone-width screen and on a laptop.
+- Calm, instrument-panel look. Dark theme by default.
+
+## 9. Build order
+
+1. **M1** — project scaffold, deploy pipeline working on Cloudflare Pages, Dashboard + Daily check-in + status rules + localStorage.
+2. **M2** — Trends charts, trend rules, "Load demo mission".
+3. **M3** — Body map with region panels and `evidence.json`.
+4. **M4** — the three Pages Functions with snapshot fallback, in this order: space-weather banner (DONKI), related studies (OSDR), radiation panel (RadLab).
+5. **M5** — About / Data sources / AI use page, accessibility pass, README.
+
+Commit and deploy at the end of each milestone. The app must be usable after M2 even if later milestones are cut.
+
+## 10. Done means
+
+- The public URL opens without login, in a private window, on desktop and phone.
+- "Load demo mission" shows all three status colors, at least one trend alert, and the charts.
+- Every NASA statement on screen has a source link; every NASA data panel shows Live or Snapshot.
+- The README lists data sources, how to run locally, and the AI tools used.

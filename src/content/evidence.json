@@ -1,0 +1,242 @@
+{
+  "_readme": "Content for the body map and indicator panels. 'nasa' statements are paraphrased from the NASA page named in 'source' and must be shown with that link. 'team' statements are the team's own rationale and must never be attributed to NASA. 'reviewStatus' is internal and is not rendered. A human on the team must check every 'nasa' statement against its source page before submission.",
+  "sources": {
+    "bodyInSpace": {
+      "title": "The Human Body in Space (NASA)",
+      "url": "https://www.nasa.gov/humans-in-space/the-human-body-in-space/"
+    },
+    "hazards": {
+      "title": "5 Hazards of Human Spaceflight (NASA Human Research Program)",
+      "url": "https://www.nasa.gov/hrp/hazards"
+    },
+    "roadmap": {
+      "title": "Human Research Roadmap: Risks (NASA)",
+      "url": "https://humanresearchroadmap.nasa.gov/Risks/"
+    }
+  },
+  "hazards": [
+    {
+      "id": "radiation",
+      "name": "Space Radiation",
+      "nasa": [
+        {
+          "text": "NASA's Human Research Program describes space radiation as one of the most hazardous aspects of spaceflight.",
+          "source": "hazards"
+        },
+        {
+          "text": "Radiation exposure is linked to a higher risk of cancer and of degenerative diseases such as heart disease and cataracts. For astronauts the main concern is the long-term impact, which depends on the total dose and how quickly it is received.",
+          "source": "bodyInSpace"
+        }
+      ],
+      "reviewStatus": "drafted from source, needs human check"
+    },
+    {
+      "id": "isolation",
+      "name": "Isolation and Confinement",
+      "nasa": [
+        {
+          "text": "Crews live isolated and confined in a small space for long periods, and NASA studies the behavioral responses this produces.",
+          "source": "hazards"
+        },
+        {
+          "text": "Altered light and dark cycles, a small and noisy habitat, and stress can disrupt circadian rhythms, and long missions can affect morale and motivation.",
+          "source": "bodyInSpace"
+        }
+      ],
+      "reviewStatus": "drafted from source, needs human check"
+    },
+    {
+      "id": "distance",
+      "name": "Distance from Earth",
+      "nasa": [
+        {
+          "text": "The farther a crew travels, the harder it becomes to receive instructions, supplies, and medical care from Earth.",
+          "source": "hazards"
+        },
+        {
+          "text": "At Mars, communication can be delayed by up to 20 minutes each way, so crews must be able to handle problems without real-time help from mission control.",
+          "source": "bodyInSpace"
+        }
+      ],
+      "reviewStatus": "drafted from source, needs human check"
+    },
+    {
+      "id": "gravity",
+      "name": "Gravity Fields",
+      "nasa": [
+        {
+          "text": "Muscles, bones, the inner ear, and organs all have to adjust each time the crew moves to a different level of gravity.",
+          "source": "hazards"
+        },
+        {
+          "text": "In weightlessness, body fluids shift toward the head, and without countermeasures astronauts lose bone and muscle.",
+          "source": "bodyInSpace"
+        }
+      ],
+      "reviewStatus": "drafted from source, needs human check"
+    },
+    {
+      "id": "environment",
+      "name": "Hostile/Closed Environments",
+      "nasa": [
+        {
+          "text": "A spacecraft is a closed ecosystem. Temperature, pressure, lighting, noise, microbes, and the crew's immune responses all have to be monitored.",
+          "source": "hazards"
+        },
+        {
+          "text": "In spaceflight, stress hormone levels rise and the immune system is altered, which could make crew members more susceptible to allergies or illness.",
+          "source": "bodyInSpace"
+        }
+      ],
+      "reviewStatus": "drafted from source, needs human check"
+    }
+  ],
+  "regions": [
+    {
+      "id": "head",
+      "label": "Brain and behavior",
+      "indicators": ["mood", "sleep"],
+      "hazards": ["isolation"],
+      "nasa": [
+        {
+          "text": "Circadian rhythms can be disrupted by altered light and dark cycles, a small and noisy habitat, and stress. On Mars, the day is about 37 minutes longer than on Earth.",
+          "source": "bodyInSpace"
+        },
+        {
+          "text": "Long missions can change morale and motivation, and more restricted, less connected environments are associated with a higher likelihood of behavioral, cognitive, or psychiatric conditions.",
+          "source": "bodyInSpace"
+        },
+        {
+          "text": "NASA countermeasures include tracking sleep and activity with actigraphy, LED lighting tuned to support circadian rhythms, a short self-test of vigilance and attention, and journaling.",
+          "source": "bodyInSpace"
+        }
+      ],
+      "team": "Sleep hours and a one-tap mood rating are the two signals a crew member can log every day without equipment. Several low days in a row are a reason to talk to the crew or the ground, before performance is affected.",
+      "reviewStatus": "drafted from source, needs human check"
+    },
+    {
+      "id": "heart",
+      "label": "Heart and circulation",
+      "indicators": ["bloodPressure", "heartRate"],
+      "hazards": ["gravity", "radiation"],
+      "nasa": [
+        {
+          "text": "In weightlessness, fluids move toward the head. This may put pressure on the eyes and affect vision.",
+          "source": "bodyInSpace"
+        },
+        {
+          "text": "After spaceflight, some astronauts cannot maintain their blood pressure when they stand up, which causes lightheadedness and can lead to fainting. Some decline in heart function has also been noted.",
+          "source": "bodyInSpace"
+        },
+        {
+          "text": "Radiation exposure is linked to a higher long-term risk of degenerative diseases, including heart disease.",
+          "source": "bodyInSpace"
+        },
+        {
+          "text": "NASA countermeasures include aerobic and resistive exercise, fluid monitoring, thigh compression cuffs, and a lower-body negative pressure device.",
+          "source": "bodyInSpace"
+        }
+      ],
+      "team": "Blood pressure and resting heart rate are quick to measure and show how the cardiovascular system is coping with fluid shifts and with the exercise program. A trend matters more than one reading.",
+      "reviewStatus": "drafted from source, needs human check"
+    },
+    {
+      "id": "abdomen",
+      "label": "Metabolism and nutrition",
+      "indicators": ["glucose"],
+      "hazards": ["distance", "environment"],
+      "nasa": [
+        {
+          "text": "On a mission far from Earth there is no resupply. The crew carries all of its food, equipment, and medical supplies, and NASA researches how to keep food and medication usable for the whole mission.",
+          "source": "bodyInSpace"
+        },
+        {
+          "text": "NASA uses onboard lab testing and analysis of urine to guide each astronaut's diet, exercise, and water intake.",
+          "source": "bodyInSpace"
+        }
+      ],
+      "team": "Blood glucose is a simple, self-measured marker of how diet and routine are affecting a crew member. We track it as a nutrition signal. The sources above do not state that spaceflight changes blood glucose, and this app does not claim that it does.",
+      "reviewStatus": "drafted from source, needs human check"
+    },
+    {
+      "id": "core",
+      "label": "Immune system and body temperature",
+      "indicators": ["temperature"],
+      "hazards": ["environment"],
+      "nasa": [
+        {
+          "text": "In spaceflight, stress hormone levels rise and the immune system is altered, which could increase susceptibility to allergies or illness.",
+          "source": "bodyInSpace"
+        },
+        {
+          "text": "Microbes change in space, and microbes that live on people spread more easily from person to person in a closed habitat.",
+          "source": "bodyInSpace"
+        },
+        {
+          "text": "NASA countermeasures include air quality monitoring, thermal control of the habitat, blood and saliva analysis, testing for reactivated latent viruses, and regular cleaning and microbial sampling.",
+          "source": "bodyInSpace"
+        }
+      ],
+      "team": "Body temperature is the simplest early sign of infection. In a closed habitat with an altered immune system, a fever is worth reporting early.",
+      "reviewStatus": "drafted from source, needs human check"
+    },
+    {
+      "id": "bones",
+      "label": "Bones and muscles",
+      "indicators": [],
+      "hazards": ["gravity"],
+      "nasa": [
+        {
+          "text": "In spaceflight, weight-bearing bones lose on average 1% to 1.5% of their mineral density per month.",
+          "source": "bodyInSpace"
+        },
+        {
+          "text": "Muscle is lost faster in microgravity without proper diet and exercise, and bone loss raises calcium excretion, which together with dehydration can increase the risk of kidney stones.",
+          "source": "bodyInSpace"
+        },
+        {
+          "text": "NASA countermeasures include aerobic and resistive exercise, bisphosphonates for bone loss, potassium citrate for kidney stone risk, and imaging of muscle and bone.",
+          "source": "bodyInSpace"
+        }
+      ],
+      "team": "Bone and muscle loss cannot be self-measured with a simple daily reading, so this region is information only. It is here because it is the reason the daily exercise routine matters.",
+      "reviewStatus": "drafted from source, needs human check"
+    },
+    {
+      "id": "whole-body",
+      "label": "Radiation exposure",
+      "indicators": [],
+      "hazards": ["radiation"],
+      "nasa": [
+        {
+          "text": "Radiation exposure is linked to a higher risk of cancer and of degenerative diseases such as heart disease and cataracts. The main concern for astronauts is the long-term impact.",
+          "source": "bodyInSpace"
+        },
+        {
+          "text": "Missions to the Moon and Mars will last much longer than a typical six-month stay on the space station, so the total radiation received, and the associated risk, may be higher.",
+          "source": "bodyInSpace"
+        },
+        {
+          "text": "NASA countermeasures include shielding, radiation monitoring, and operational procedures.",
+          "source": "bodyInSpace"
+        }
+      ],
+      "team": "This panel shows radiation dose rates actually measured aboard the International Space Station, from NASA's RadLab database, and recent solar events from NASA's DONKI space weather database. The cumulative dose shown is an illustration for the mission day, not a personal dose record.",
+      "reviewStatus": "drafted from source, needs human check"
+    }
+  ],
+  "escalation": {
+    "nasa": [
+      {
+        "text": "At Mars, communication can be delayed by up to 20 minutes each way, so crews must be able to solve problems without real-time help from mission control.",
+        "source": "bodyInSpace"
+      },
+      {
+        "text": "NASA prepares crews for this with medical training, crew-performed ultrasound scans, onboard lab testing, and research into clinical decision support tools.",
+        "source": "bodyInSpace"
+      }
+    ],
+    "team": "This is why the app gives self-care steps first and tells the crew member when a result should go to the Crew Medical Officer or the flight surgeon.",
+    "reviewStatus": "drafted from source, needs human check"
+  }
+}
