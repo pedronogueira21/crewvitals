@@ -10,7 +10,7 @@ export default function Layout() {
     <div className="mx-auto flex min-h-dvh max-w-5xl flex-col px-4 sm:px-6">
       <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-line py-4">
         <p className="font-display text-xl font-semibold tracking-wide">CrewVitals</p>
-        <nav aria-label="Main" className="flex gap-1">
+        <nav aria-label="Main" className="flex flex-wrap gap-1">
           <NavLink to="/" end className={navLink}>
             Dashboard
           </NavLink>
@@ -19,6 +19,9 @@ export default function Layout() {
           </NavLink>
           <NavLink to="/trends" className={navLink}>
             Trends
+          </NavLink>
+          <NavLink to="/body-map" className={navLink}>
+            Body map
           </NavLink>
         </nav>
       </header>

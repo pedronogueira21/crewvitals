@@ -1,6 +1,6 @@
 // Trend rules, sleep/mood guidance and the demo mission (SPEC.md sections 3 and 4).
 import { describe, expect, it } from 'vitest'
-import { GUIDANCE, INDICATORS, SELF_CARE_RED, guidanceFor, readIndicator } from '../content/indicators'
+import { GUIDANCE, INDICATORS, SELF_CARE_GUIDANCE, guidanceFor, readIndicator } from '../content/indicators'
 import type { Entry } from '../types'
 import { demoMission } from './demo'
 import { trendAlerts } from './trends'
@@ -45,15 +45,25 @@ describe('trend rules', () => {
   })
 })
 
-describe('guidance for a single red reading', () => {
+describe('guidance for sleep and mood', () => {
   const read = (values: Partial<Entry>) => INDICATORS.flatMap((i) => readIndicator(i.id, day(1, values)) ?? [])
-  it('sleep or mood red alone: self-care text, no re-measure or Crew Medical Officer', () => {
-    expect(guidanceFor(read({ sleepHours: 4 }))).toBe(SELF_CARE_RED)
-    expect(guidanceFor(read({ mood: 1, heartRate: 105 }))).toBe(SELF_CARE_RED)
-    expect(SELF_CARE_RED).not.toMatch(/re-measure|Crew Medical Officer/i)
+  it('red sleep or mood alone: self-care text', () => {
+    expect(guidanceFor(read({ sleepHours: 4 }))).toBe(SELF_CARE_GUIDANCE.red)
+    expect(guidanceFor(read({ mood: 1, heartRate: 105 }))).toBe(SELF_CARE_GUIDANCE.red)
   })
-  it('any other red keeps the red guidance', () => {
+  it('yellow sleep or mood alone: self-care text', () => {
+    expect(guidanceFor(read({ sleepHours: 6.5 }))).toBe(SELF_CARE_GUIDANCE.yellow)
+    expect(guidanceFor(read({ mood: 3, temperatureC: 36.8 }))).toBe(SELF_CARE_GUIDANCE.yellow)
+  })
+  it('self-care texts never say re-measure or refer to the Crew Medical Officer', () => {
+    for (const text of Object.values(SELF_CARE_GUIDANCE)) {
+      expect(text).not.toMatch(/re-measure|Crew Medical Officer/i)
+    }
+  })
+  it('any other indicator at the worst status keeps the standard guidance', () => {
     expect(guidanceFor(read({ temperatureC: 38.5, sleepHours: 4 }))).toBe(GUIDANCE.red)
+    expect(guidanceFor(read({ heartRate: 105, mood: 3 }))).toBe(GUIDANCE.yellow)
+    expect(guidanceFor(read({ heartRate: 105, mood: 1 }))).toBe(SELF_CARE_GUIDANCE.red)
   })
 })
 

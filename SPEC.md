@@ -55,12 +55,16 @@ Trend rules (evaluated on the last 3 entries, which must fall on 3 consecutive m
 
 Escalation, sleep-debt and behavioral-health alerts tell the user to inform the Crew Medical Officer and report to the flight surgeon on the ground. Alert texts are editable strings in `indicators.ts` and need the same review as the thresholds.
 
+When at least one red trend alert is active, the Overall status box says so first ("A red trend alert is active: inform the Crew Medical Officer and report to the flight surgeon on the ground. See the trend alerts below.", with a link to the alerts), and then shows the guidance for the latest check-in under the label "Latest check-in:".
+
 Guidance shown per status:
 
 - Green: "Within reference range. Keep your routine."
 - Yellow: "Outside the reference range. Re-measure, review the self-care steps below, and log again tomorrow."
 - Red: "Well outside the reference range. Re-measure now. If confirmed, inform the Crew Medical Officer and report to the flight surgeon on the ground."
-- Red for Sleep or Mood: "Well below the reference range. Follow the self-care steps and log again tomorrow." A single red Sleep or Mood reading never says "Re-measure now" or refers the user to the Crew Medical Officer; escalation for these two comes only from the 3-day trend rules. The overall status uses this text when Sleep or Mood are the only red indicators.
+- Yellow for Sleep or Mood: "Below the reference range. Review the self-care steps and log again tomorrow."
+- Red for Sleep or Mood: "Well below the reference range. Follow the self-care steps and log again tomorrow."
+- A single Sleep or Mood reading never says "Re-measure" or refers the user to the Crew Medical Officer; escalation for these two comes only from the 3-day trend rules. The overall status uses the Sleep/Mood text when Sleep or Mood are the only indicators at the worst status.
 - Blood pressure SBP ≥ 180 or DBP ≥ 120, glucose < 54, temperature ≥ 39.0 → "Urgent: inform the Crew Medical Officer now."
 
 Self-care steps per indicator are short editable strings in `indicators.ts`.

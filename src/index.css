@@ -60,3 +60,51 @@ body {
     color-mix(in srgb, var(--color-alert) 22%, transparent) 2px 4px
   );
 }
+
+/*
+  Body map (src/assets/body.svg). CSS beats the SVG's own fill/stroke
+  attributes, so any drawing with the right ids gets these colours. Each
+  status also has its own icon marker, so colour is never the only cue.
+*/
+.body-map svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 30rem;
+}
+/* Set on the region only, so shapes inside a region group inherit its colour. */
+.body-map [data-region] {
+  --region: var(--color-control);
+}
+.body-map [data-region],
+.body-map [data-region] * {
+  fill: color-mix(in srgb, var(--region) 30%, var(--color-panel));
+  stroke: color-mix(in srgb, var(--region) 70%, var(--color-panel));
+  stroke-width: 1.5;
+  cursor: pointer;
+}
+.body-map [data-status="green"] { --region: var(--color-ok); }
+.body-map [data-status="yellow"] { --region: var(--color-warn); }
+.body-map [data-status="red"] { --region: var(--color-alert); }
+.body-map [data-status="info"] { --region: var(--color-accent); }
+.body-map [data-region="whole-body"] {
+  fill: color-mix(in srgb, var(--region) 10%, var(--color-space));
+}
+.body-map [data-region]:hover,
+.body-map [data-region]:hover * {
+  stroke: var(--color-ink);
+}
+.body-map [data-region][aria-pressed="true"],
+.body-map [data-region][aria-pressed="true"] * {
+  stroke: var(--color-ink);
+  stroke-width: 3;
+}
+.body-map [data-region]:focus {
+  outline: none;
+}
+.body-map [data-region]:focus-visible,
+.body-map [data-region]:focus-visible * {
+  stroke: var(--color-accent);
+  stroke-width: 3.5;
+  stroke-dasharray: 5 3;
+}

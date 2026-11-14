@@ -23,14 +23,21 @@ export const GUIDANCE: Record<Status, string> = {
 export const URGENT_GUIDANCE = 'Urgent: inform the Crew Medical Officer now.'
 
 /**
- * Sleep and mood: a single red reading gets this text instead of GUIDANCE.red.
- * They escalate only through the 3-day trend rules below.
+ * Sleep and mood: a single yellow or red reading gets this text instead of
+ * GUIDANCE (no "re-measure", no Crew Medical Officer). They escalate only
+ * through the 3-day trend rules below.
  */
-export const SELF_CARE_RED =
-  'Well below the reference range. Follow the self-care steps and log again tomorrow.'
+export const SELF_CARE_GUIDANCE: Record<'yellow' | 'red', string> = {
+  yellow: 'Below the reference range. Review the self-care steps and log again tomorrow.',
+  red: 'Well below the reference range. Follow the self-care steps and log again tomorrow.',
+}
 
-/** Indicators whose red status escalates only through the trend rules. */
+/** Indicators that escalate only through the trend rules. */
 export const TREND_ONLY_ESCALATION: IndicatorId[] = ['sleep', 'mood']
+
+/** Overall status box, when at least one red trend alert is active. */
+export const RED_TREND_OVERALL = (count: number) =>
+  `${count === 1 ? 'A red trend alert is' : `${count} red trend alerts are`} active: inform the Crew Medical Officer and report to the flight surgeon on the ground. See the trend alerts below.`
 
 // Trend alerts (SPEC.md section 4, evaluated on the last 3 entries).
 // REVIEW NEEDED: the team must review these texts with the thresholds.
@@ -339,14 +346,16 @@ export function worstStatus(statuses: Status[]): Status {
 
 /**
  * Guidance for one or more readings, from the worst status among them.
- * Red caused only by sleep or mood gets the self-care text, not "re-measure now".
+ * When that worst status comes only from sleep or mood, the self-care text is
+ * used instead of "re-measure".
  */
 export function guidanceFor(readings: Reading[]): string {
   const status = worstStatus(readings.map((r) => r.status))
-  const redFromOthers = readings.some(
-    (r) => r.status === 'red' && !TREND_ONLY_ESCALATION.includes(r.indicatorId),
-  )
-  return status === 'red' && !redFromOthers ? SELF_CARE_RED : GUIDANCE[status]
+  if (status === 'green') return GUIDANCE.green
+  const selfCareOnly = readings
+    .filter((r) => r.status === status)
+    .every((r) => TREND_ONLY_ESCALATION.includes(r.indicatorId))
+  return selfCareOnly ? SELF_CARE_GUIDANCE[status] : GUIDANCE[status]
 }
 
 export function roundTo(value: number, decimals: number): number {

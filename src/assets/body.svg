@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 400">
+  <!--
+    PLACEHOLDER figure built from basic shapes. Replace this file with the
+    team's drawing; no code change is needed if the new file keeps this contract:
+
+    - One element per region with exactly these ids:
+      head, heart, abdomen, core, bones, whole-body
+      (a shape or a <g> group; a region must not be nested inside another region).
+    - Later elements are drawn on top and receive the click, so put whole-body
+      first (behind everything) and the small regions (heart, abdomen) last.
+    - Do not set fill or stroke in a style="" attribute; the app colours each
+      region by status (fill/stroke attributes are fine, they get overridden).
+    - The status icon goes at the centre of each region's bounding box. To place
+      it elsewhere, add data-marker-x and data-marker-y (viewBox units).
+    - Any viewBox works. This one is 0 0 200 400 (portrait, 1:2).
+  -->
+  <rect id="whole-body" x="6" y="4" width="188" height="392" rx="44" data-marker-x="172" data-marker-y="28"/>
+  <g id="bones" data-marker-x="81" data-marker-y="330">
+    <rect x="34" y="96" width="20" height="124" rx="10"/>
+    <rect x="146" y="96" width="20" height="124" rx="10"/>
+    <rect x="68" y="236" width="26" height="148" rx="12"/>
+    <rect x="106" y="236" width="26" height="148" rx="12"/>
+  </g>
+  <rect id="core" x="60" y="88" width="80" height="156" rx="20" data-marker-x="100" data-marker-y="226"/>
+  <circle id="head" cx="100" cy="48" r="30"/>
+  <circle id="heart" cx="100" cy="124" r="20"/>
+  <ellipse id="abdomen" cx="100" cy="182" rx="28" ry="22"/>
+</svg>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import { OctagonAlert } from 'lucide-react'
 import { Link, useLocation } from 'react-router'
 import DataControls from '../components/DataControls'
 import IndicatorCard from '../components/IndicatorCard'
@@ -7,7 +8,13 @@ import SimulatedTag from '../components/SimulatedTag'
 import StatusBadge from '../components/StatusBadge'
 import TrendAlerts from '../components/TrendAlerts'
 import UrgentNotice from '../components/UrgentNotice'
-import { INDICATORS, guidanceFor, readIndicator, worstStatus } from '../content/indicators'
+import {
+  INDICATORS,
+  RED_TREND_OVERALL,
+  guidanceFor,
+  readIndicator,
+  worstStatus,
+} from '../content/indicators'
 import { formatDate, missionDayOn, todayISO } from '../lib/mission'
 import { trendAlerts } from '../lib/trends'
 import { useStore } from '../state/store'
@@ -37,6 +44,7 @@ export default function Dashboard() {
   const urgent = logged.some((r) => r.urgent)
   const notLogged = cards.length - logged.length
   const alerts = trendAlerts(entries)
+  const redTrends = alerts.filter((a) => a.status === 'red').length
 
   return (
     <div className="flex flex-col gap-8">
@@ -68,7 +76,21 @@ export default function Dashboard() {
               {notLogged > 0 && ` ${notLogged} not logged.`}
             </p>
             {urgent && <UrgentNotice />}
-            <p className="max-w-[70ch]">{guidanceFor(logged)}</p>
+            {redTrends > 0 && (
+              <p className="flex max-w-[70ch] items-start gap-2 rounded-md border border-alert px-3 py-2 font-semibold">
+                <OctagonAlert aria-hidden="true" size={20} strokeWidth={2.5} className="mt-0.5 shrink-0 text-alert" />
+                <span>
+                  {RED_TREND_OVERALL(redTrends)}{' '}
+                  <a href="#trend-alerts-heading" className="text-accent underline">
+                    Go to trend alerts
+                  </a>
+                </span>
+              </p>
+            )}
+            <p className="max-w-[70ch]">
+              {redTrends > 0 && <span className="font-semibold">Latest check-in: </span>}
+              {guidanceFor(logged)}
+            </p>
             <p className="text-sm text-muted">
               From the check-in for mission day {latest.missionDay} ({formatDate(latest.date)}).
               {latest.date !== today && ' Nothing is logged for today yet.'}
