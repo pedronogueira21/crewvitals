@@ -335,33 +335,26 @@ const EN: ClinicalText = {
   },
 }
 
-// PT REVIEW NEEDED: every string in PT below is a translation of the English
-// clinical text above, drafted with Claude. The team's biomedical engineer must
-// review it before it is used. No meaning or number may differ from the English.
+// Brazilian Portuguese translation of the English clinical text above, drafted
+// with Claude and reviewed by the team's biomedical engineer on 14 Nov 2026.
+// No meaning or number may differ from the English; changes need the same review.
 const PT: ClinicalText = {
-  // PT REVIEW NEEDED
   referenceRangeLabel: 'Faixa de referência: referência clínica para adultos, baseada na Terra',
-  // PT REVIEW NEEDED
   guidance: {
     green: 'Dentro da faixa de referência. Mantenha sua rotina.',
     yellow: 'Fora da faixa de referência. Meça novamente, revise os passos de autocuidado abaixo e registre de novo amanhã.',
     red: 'Muito fora da faixa de referência. Meça novamente agora. Se confirmado, informe o Oficial Médico da Tripulação e reporte ao médico de voo em solo.',
   },
-  // PT REVIEW NEEDED
   selfCareGuidance: {
     yellow: 'Abaixo da faixa de referência. Revise os passos de autocuidado e registre de novo amanhã.',
     red: 'Muito abaixo da faixa de referência. Siga os passos de autocuidado e registre de novo amanhã.',
   },
-  // PT REVIEW NEEDED
   urgent: 'Urgente: informe agora o Oficial Médico da Tripulação.',
-  // PT REVIEW NEEDED
-  marsNote: 'A comunicação com o solo tem atraso. Siga primeiro o procedimento de bordo.',
-  // PT REVIEW NEEDED
+  marsNote: 'A comunicação com a equipe em solo tem atraso. Siga primeiro o procedimento de bordo.',
   escalate: 'Informe o Oficial Médico da Tripulação e reporte ao médico de voo em solo.',
   escalateInline: 'informe o Oficial Médico da Tripulação e reporte ao médico de voo em solo.',
   redTrendOverall: (count, action) =>
     `${count === 1 ? 'Um alerta de tendência vermelho está ativo' : `${count} alertas de tendência vermelhos estão ativos`}: ${action} Veja os alertas de tendência abaixo.`,
-  // PT REVIEW NEEDED
   trend: {
     escalation: (name) => `${name}: vermelho em 3 dias consecutivos`,
     sleepDebt: 'Déficit de sono: menos de 6 h de sono em 3 dias consecutivos',
@@ -369,7 +362,6 @@ const PT: ClinicalText = {
     cardiovascular: (name) => `Tendência cardiovascular: ${name.toLowerCase()} fora da faixa de referência em 3 dias consecutivos`,
     cardiovascularAction: 'Continue medindo todos os dias e informe o Oficial Médico da Tripulação sobre a tendência.',
   },
-  // PT REVIEW NEEDED: names, how to measure, self-care steps.
   indicators: {
     bloodPressure: {
       name: 'Pressão arterial',
@@ -439,7 +431,6 @@ const PT: ClinicalText = {
       ],
     },
   },
-  // PT REVIEW NEEDED
   measures: {
     systolic: { label: 'Sistólica', unit: 'mmHg' },
     diastolic: { label: 'Diastólica', unit: 'mmHg' },
@@ -450,9 +441,7 @@ const PT: ClinicalText = {
     sleepHours: { label: 'Sono', unit: 'h' },
     mood: { label: 'Humor', unit: 'de 5' },
   },
-  // PT REVIEW NEEDED
   moodLabels: { 1: 'Muito baixo', 2: 'Baixo', 3: 'Neutro', 4: 'Bom', 5: 'Muito bom' },
-  // PT REVIEW NEEDED
   reading: {
     fasting: 'em jejum',
     nonFasting: 'sem jejum',

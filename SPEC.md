@@ -178,7 +178,7 @@ type Settings = { missionStart: string; setting: "ISS" | "Lunar surface" | "Mars
 
 ## 8. Accessibility and design
 
-- Language: English (default) and Brazilian Portuguese, chosen in the header on every screen and saved in the browser. A first visit is always in English, whatever the browser language. `<html lang>` follows the choice. Proper names (CrewVitals, ISS, DONKI, RadLab, OSDR, spacecraft and instrument names), OSDR study titles and units stay in English; numbers and dates use Brazilian format in Portuguese. NASA paraphrases have a Portuguese version beside the English one in `evidence.json` (same source keys), labelled as a translation of the English paraphrase. Portuguese clinical text in `indicators.ts` is marked `PT REVIEW NEEDED`. Status rules never depend on the language. The translation was drafted with Claude and has not been reviewed.
+- Language: English (default) and Brazilian Portuguese, chosen in the header on every screen and saved in the browser. A first visit is always in English, whatever the browser language. `<html lang>` follows the choice. Proper names (CrewVitals, ISS, DONKI, RadLab, OSDR, spacecraft and instrument names), OSDR study titles and units stay in English; numbers and dates use Brazilian format in Portuguese. NASA paraphrases have a Portuguese version beside the English one in `evidence.json` (same source keys), labelled as a translation of the English paraphrase. Status rules never depend on the language. The translation was drafted with Claude and reviewed by the team on 14 Nov 2026 (the clinical text by the team's biomedical engineer); changes need the same review.
 
 - Status is never conveyed by color alone: each status has an icon and a text label.
 - Color-blind-safe palette; contrast at WCAG AA.

@@ -65,7 +65,7 @@ Cloudflare Pages, connected to this GitHub repository:
 
 ## Editing content
 
-- Thresholds, guidance, self-care steps and trend-alert texts: `src/content/indicators.ts`, the one place to edit them. The English and Portuguese clinical text sit side by side there; the Portuguese strings are marked `PT REVIEW NEEDED`. Status rules do not depend on the language.
+- Thresholds, guidance, self-care steps and trend-alert texts: `src/content/indicators.ts`, the one place to edit them. The English and Portuguese clinical text sit side by side there; the Portuguese was reviewed by the team's biomedical engineer on 14 Nov 2026, and changes need the same review. Status rules do not depend on the language.
 - Screen text in both languages: `src/i18n/ui.ts`. A missing Portuguese string is a type error, and `src/i18n/i18n.test.ts` checks that every string exists in both languages, that clinical numbers are unchanged, and that the status rules give identical results in both. Thresholds and guidance were reviewed by the team's biomedical engineer on 14 Nov 2026; any change needs the same review.
 - Spaceflight context: `src/content/evidence.json`. Render it as written; check every NASA statement against its source page. Each English text has its Portuguese translation beside it (`textPt`, `labelPt`, `namePt`, `teamPt`), with the same source keys.
 - Body map figure: `src/assets/body.svg` can be replaced by another drawing without code changes, as long as it keeps the six region ids (`head`, `heart`, `abdomen`, `core`, `bones`, `whole-body`). The comment at the top of the file explains the rest.
@@ -81,5 +81,5 @@ Cloudflare Pages, connected to this GitHub repository:
 - The browser-tab icon (`public/favicon.svg`, a pulse line crossing a ring) is an original mark drawn in code with AI assistance.
 - No images were generated with AI, and the app uses no NASA logos, insignia or mission patches.
 - Gemini (Google) was used by the team's biomedical engineer as an aid when reviewing the thresholds and guidance (review completed 14 Nov 2026).
-- The Brazilian Portuguese translation of the app, including the clinical text and the NASA paraphrases, was drafted with Claude. It has not been reviewed.
+- The Brazilian Portuguese translation of the app, including the clinical text and the NASA paraphrases, was drafted with Claude and reviewed by the team on 14 Nov 2026.
 - The app itself uses no AI: statuses, alerts and guidance come from fixed rules in `src/content/indicators.ts`.

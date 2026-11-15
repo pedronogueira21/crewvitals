@@ -307,7 +307,7 @@ const en = {
       'Claude drafted the paraphrases of NASA pages shown in the body map and on this page, working from the page linked beside each statement. Our team checked each one against its source page on 14 Nov 2026.',
       'Claude also drafted the team\'s design rationale texts ("Why we track this" in the body map and "How the app escalates" on this page). They are labelled as our rationale, not NASA statements.',
       "Gemini (Google) was used by the team's biomedical engineer as an aid when reviewing the thresholds and guidance (review completed 14 Nov 2026).",
-      'The Brazilian Portuguese translation of the app, including the clinical text and the NASA paraphrases, was drafted with Claude. It has not been reviewed.',
+      'The Brazilian Portuguese translation of the app, including the clinical text and the NASA paraphrases, was drafted with Claude and reviewed by the team on 14 Nov 2026.',
       'The body map figure is a schematic drawn in code with AI assistance.',
       'The browser-tab icon (a pulse line crossing a ring) is an original mark drawn in code with AI assistance.',
       'No images were generated with AI, and the app uses no NASA logos, insignia or mission patches.',
@@ -371,7 +371,7 @@ const pt: Dict = {
     settingLunar: 'Orientação padrão. Não existem dados medidos de radiação na superfície lunar; veja o ',
     settingLunarLink: 'painel de radiação',
     settingMars:
-      'Os alertas vermelhos acrescentam um lembrete de que a comunicação com o solo tem atraso e de que o procedimento de bordo vem primeiro.',
+      'Os alertas vermelhos acrescentam um lembrete de que a comunicação com a equipe em solo tem atraso e de que o procedimento de bordo vem primeiro.',
     overallHeading: 'Status geral',
     allIn: (n) => `Todos os ${n} indicadores registrados estão dentro da faixa de referência.`,
     someOut: (out, n) =>
@@ -596,16 +596,16 @@ const pt: Dict = {
     pages:
       'As declarações no mapa do corpo e abaixo parafraseiam estas páginas (em inglês) e estão incluídas no aplicativo. Foram redigidas em inglês com o Claude (veja Uso de IA abaixo) e conferidas com as páginas de origem pela nossa equipe em 14/11/2026. Em português, você lê uma tradução dessa paráfrase em inglês. Cada declaração tem o link da sua página.',
     escalationHeading: 'Cuidados médicos longe da Terra',
-    howEscalates: 'Como o aplicativo escala',
+    howEscalates: 'Como o aplicativo encaminha os casos',
     aiHeading: 'Uso de IA',
     ai: [
       'O Claude (Anthropic) foi usado para planejar o projeto e escrever sua especificação.',
       'O código do aplicativo foi escrito com o Claude Code, o assistente de programação com IA da Anthropic, e revisado pela nossa equipe.',
       'O Claude redigiu os textos da interface e os passos de autocuidado.',
       'O Claude redigiu as paráfrases das páginas da NASA mostradas no mapa do corpo e nesta página, a partir da página indicada ao lado de cada declaração. Nossa equipe conferiu cada uma com a página de origem em 14/11/2026.',
-      'O Claude também redigiu os textos de justificativa de design da equipe ("Por que acompanhamos isto" no mapa do corpo e "Como o aplicativo escala" nesta página). Eles estão marcados como nossa justificativa, não como declarações da NASA.',
+      'O Claude também redigiu os textos de justificativa de design da equipe ("Por que acompanhamos isto" no mapa do corpo e "Como o aplicativo encaminha os casos" nesta página). Eles estão marcados como nossa justificativa, não como declarações da NASA.',
       'O Gemini (Google) foi usado pelo engenheiro biomédico da equipe como apoio na revisão dos limites e das orientações (revisão concluída em 14/11/2026).',
-      'A tradução do aplicativo para o português do Brasil, incluindo o texto clínico e as paráfrases da NASA, foi redigida com o Claude. Ela não foi revisada.',
+      'A tradução do aplicativo para o português do Brasil, incluindo o texto clínico e as paráfrases da NASA, foi redigida com o Claude e revisada pela equipe em 14/11/2026.',
       'A figura do mapa do corpo é um esquema desenhado em código com assistência de IA.',
       'O ícone da aba do navegador (uma linha de pulso cruzando um anel) é uma marca original desenhada em código com assistência de IA.',
       'Nenhuma imagem foi gerada com IA, e o aplicativo não usa logotipos, insígnias ou emblemas de missão da NASA.',
