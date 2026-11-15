@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { demoMission } from '../lib/demo'
-import { formatDate,isISODate, missionDayOn, todayISO } from '../lib/mission'
+import { isISODate, missionDayOn, todayISO } from '../lib/mission'
 import {
   clearAll,
   loadEntries,
@@ -10,12 +10,19 @@ import {
   saveSettings,
   sortByDate,
 } from '../lib/storage'
+import type { Dict } from '../i18n/ui'
 import type { Entry, Settings } from '../types'
 
-type Result = { ok: true } | { ok: false; error: string }
+/** Errors are codes; the screens turn them into words in the chosen language (see storeErrorText). */
+export type StoreError =
+  | { code: 'storage' }
+  | { code: 'invalidDate' }
+  | { code: 'futureStart' }
+  | { code: 'startAfterFirst'; date: string }
 
-const STORAGE_ERROR =
-  'This browser did not save the data. Check that storage is not blocked or full, then try again.'
+type Result = { ok: true } | { ok: false; error: StoreError }
+
+const STORAGE_ERROR: StoreError = { code: 'storage' }
 
 type Store = {
   /** Entries sorted by date, oldest first. One entry per mission day. */
@@ -49,15 +56,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const setMissionStart = useCallback(
     (date: string): Result => {
-      if (!isISODate(date)) return { ok: false, error: 'Enter a valid date.' }
-      if (date > todayISO()) return { ok: false, error: 'The mission start cannot be in the future.' }
+      if (!isISODate(date)) return { ok: false, error: { code: 'invalidDate' } }
+      if (date > todayISO()) return { ok: false, error: { code: 'futureStart' } }
       const first = entries[0]
-      if (first && date > first.date) {
-        return {
-          ok: false,
-          error: `The mission start cannot be after your first check-in (${formatDate(first.date)}).`,
-        }
-      }
+      if (first && date > first.date) return { ok: false, error: { code: 'startAfterFirst', date: first.date } }
       const nextSettings = { ...settings, missionStart: date }
       const nextEntries = entries.map((e) => ({ ...e, missionDay: missionDayOn(e.date, date) }))
       if (!saveSettings(nextSettings) || !saveEntries(nextEntries)) {
@@ -109,4 +111,18 @@ export function useStore(): Store {
   const store = useContext(StoreContext)
   if (!store) throw new Error('useStore must be used inside StoreProvider')
   return store
+}
+
+/** The words for a store error. */
+export function storeErrorText(error: StoreError, t: Dict, date: (iso: string) => string): string {
+  switch (error.code) {
+    case 'storage':
+      return t.errors.storage
+    case 'invalidDate':
+      return t.errors.invalidDate
+    case 'futureStart':
+      return t.errors.futureStart
+    case 'startAfterFirst':
+      return t.errors.startAfterFirst(date(error.date))
+  }
 }

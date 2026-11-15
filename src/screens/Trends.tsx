@@ -11,24 +11,19 @@ import {
 } from 'recharts'
 import type { DotItemDotProps } from 'recharts'
 import SimulatedTag from '../components/SimulatedTag'
-import { STATUS_UI } from '../components/StatusBadge'
 import TrendAlerts from '../components/TrendAlerts'
-import {
-  INDICATORS,
-  MEASURES,
-  REFERENCE_RANGE_LABEL,
-  greenRange,
-  readIndicator,
-  statusOf,
-} from '../content/indicators'
-import type { IndicatorId, Measure, Status } from '../content/indicators'
+import { INDICATOR_IDS, MEASURES, greenRange, readIndicator, statusOf } from '../content/indicators'
+import type { ClinicalText, IndicatorId, Measure, Status } from '../content/indicators'
+import { num } from '../i18n/format'
+import { useLang } from '../i18n/LangProvider'
+import type { Dict } from '../i18n/ui'
 import { trendAlerts } from '../lib/trends'
 import { useStore } from '../state/store'
 import type { Entry } from '../types'
 
 type Series = {
   key: string
-  label: string
+  label: (c: ClinicalText) => string
   value: (e: Entry) => number | undefined
   /** Measure used for the status of each point. */
   measure: (e: Entry) => Measure
@@ -39,8 +34,10 @@ type Chart = {
   series: Series[]
   /** Green bands to shade. */
   bands: Measure[]
-  unit: string
-  note?: string
+  unit: (c: ClinicalText) => string
+  /** Decimals shown in the tooltip. */
+  decimals: number
+  note?: (t: Dict) => string
 }
 
 const fixed = (m: Measure) => () => m
@@ -48,45 +45,51 @@ const fixed = (m: Measure) => () => m
 const CHARTS: Record<IndicatorId, Chart> = {
   bloodPressure: {
     series: [
-      { key: 'systolic', label: 'Systolic', value: (e) => e.systolic, measure: fixed(MEASURES.systolic) },
-      { key: 'diastolic', label: 'Diastolic', value: (e) => e.diastolic, measure: fixed(MEASURES.diastolic), dashed: true },
+      { key: 'systolic', label: (c) => c.measures.systolic.label, value: (e) => e.systolic, measure: fixed(MEASURES.systolic) },
+      { key: 'diastolic', label: (c) => c.measures.diastolic.label, value: (e) => e.diastolic, measure: fixed(MEASURES.diastolic), dashed: true },
     ],
     bands: [MEASURES.systolic, MEASURES.diastolic],
-    unit: 'mmHg',
-    note: 'Solid line: systolic. Dashed line: diastolic. Each has its own green band.',
+    unit: () => 'mmHg',
+    decimals: 0,
+    note: (t) => t.trends.bpNote,
   },
   heartRate: {
-    series: [{ key: 'heartRate', label: 'Resting heart rate', value: (e) => e.heartRate, measure: fixed(MEASURES.heartRate) }],
+    series: [{ key: 'heartRate', label: (c) => c.indicators.heartRate.name, value: (e) => e.heartRate, measure: fixed(MEASURES.heartRate) }],
     bands: [MEASURES.heartRate],
-    unit: 'bpm',
+    unit: () => 'bpm',
+    decimals: 0,
   },
   glucose: {
     series: [
       {
         key: 'glucose',
-        label: 'Blood glucose',
+        label: (c) => c.indicators.glucose.name,
         value: (e) => e.glucose,
         measure: (e) => (e.glucoseFasting === false ? MEASURES.glucoseNonFasting : MEASURES.glucoseFasting),
       },
     ],
     bands: [MEASURES.glucoseNonFasting, MEASURES.glucoseFasting],
-    unit: 'mg/dL',
-    note: 'Darker band: fasting green range. Lighter band above it: non-fasting green range. Each point is judged against the range for how it was taken.',
+    unit: () => 'mg/dL',
+    decimals: 0,
+    note: (t) => t.trends.glucoseNote,
   },
   temperature: {
-    series: [{ key: 'temperatureC', label: 'Body temperature', value: (e) => e.temperatureC, measure: fixed(MEASURES.temperatureC) }],
+    series: [{ key: 'temperatureC', label: (c) => c.indicators.temperature.name, value: (e) => e.temperatureC, measure: fixed(MEASURES.temperatureC) }],
     bands: [MEASURES.temperatureC],
-    unit: '°C',
+    unit: () => '°C',
+    decimals: 1,
   },
   sleep: {
-    series: [{ key: 'sleepHours', label: 'Sleep', value: (e) => e.sleepHours, measure: fixed(MEASURES.sleepHours) }],
+    series: [{ key: 'sleepHours', label: (c) => c.indicators.sleep.name, value: (e) => e.sleepHours, measure: fixed(MEASURES.sleepHours) }],
     bands: [MEASURES.sleepHours],
-    unit: 'h',
+    unit: () => 'h',
+    decimals: 1,
   },
   mood: {
-    series: [{ key: 'mood', label: 'Mood', value: (e) => e.mood, measure: fixed(MEASURES.mood) }],
+    series: [{ key: 'mood', label: (c) => c.indicators.mood.name, value: (e) => e.mood, measure: fixed(MEASURES.mood) }],
     bands: [MEASURES.mood],
-    unit: 'of 5',
+    unit: (c) => c.measures.mood.unit,
+    decimals: 0,
   },
 }
 
@@ -113,15 +116,16 @@ function StatusDot({ cx, cy, status }: { cx: number; cy: number; status: Status 
 
 export default function Trends() {
   const { entries } = useStore()
+  const { t, c } = useLang()
 
   if (entries.length === 0) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="font-display text-4xl font-semibold">Trends</h1>
+        <h1 className="font-display text-4xl font-semibold">{t.trends.title}</h1>
         <p className="text-muted">
-          No check-ins yet. Log a check-in, or load the demo mission from the{' '}
+          {t.trends.emptyBefore}
           <Link to="/" className="text-accent underline">
-            dashboard
+            {t.trends.emptyLink}
           </Link>
           .
         </p>
@@ -132,18 +136,16 @@ export default function Trends() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="font-display text-4xl font-semibold">Trends</h1>
-        <p className="mt-2 max-w-[70ch] text-muted">
-          Each chart shows one indicator across mission days. The shaded band is the green range.
-        </p>
+        <h1 className="font-display text-4xl font-semibold">{t.trends.title}</h1>
+        <p className="mt-2 max-w-[70ch] text-muted">{t.trends.intro}</p>
         <Legend />
       </div>
 
       <TrendAlerts alerts={trendAlerts(entries)} simulated={entries.slice(-3).some((e) => e.simulated)} />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {INDICATORS.map((indicator) => (
-          <TrendChart key={indicator.id} id={indicator.id} name={indicator.name} entries={entries} />
+        {INDICATOR_IDS.map((id) => (
+          <TrendChart key={id} id={id} name={c.indicators[id].name} entries={entries} />
         ))}
       </div>
     </div>
@@ -151,14 +153,15 @@ export default function Trends() {
 }
 
 function Legend() {
+  const { t } = useLang()
   return (
-    <ul aria-label="Point markers" className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted">
+    <ul aria-label={t.trends.markers} className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted">
       {(['green', 'yellow', 'red'] as const).map((status) => (
         <li key={status} className="flex items-center gap-1.5">
           <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
             <StatusDot cx={8} cy={8.5} status={status} />
           </svg>
-          {STATUS_UI[status].label}
+          {t.status[status]}
         </li>
       ))}
     </ul>
@@ -166,7 +169,10 @@ function Legend() {
 }
 
 function TrendChart({ id, name, entries }: { id: IndicatorId; name: string; entries: Entry[] }) {
+  const { t, c, lang } = useLang()
   const chart = CHARTS[id]
+  const unit = chart.unit(c)
+  const tick = (v: number) => num(v, lang, Number.isInteger(v) ? 0 : 1, false)
   const shown = entries.filter((e) => chart.series.some((s) => s.value(e) !== undefined))
   const outside = shown.flatMap((e) => {
     const status = readIndicator(id, e)?.status
@@ -187,23 +193,23 @@ function TrendChart({ id, name, entries }: { id: IndicatorId; name: string; entr
   const hi = Math.max(...chart.bands.map((m) => m.gauge.max))
   const outsideText =
     outside.length === 0
-      ? 'All readings within the green range.'
-      : `Outside the green range: ${outside.map((o) => `day ${o.day} (${STATUS_UI[o.status].label.toLowerCase()})`).join(', ')}.`
+      ? t.trends.allIn
+      : t.trends.outside(outside.map((o) => t.trends.dayItem(o.day, t.status[o.status].toLowerCase())).join(', '))
 
   return (
-    <section aria-label={`${name} trend`} className="flex flex-col gap-3 rounded-lg border border-line bg-panel p-4">
+    <section aria-label={t.trends.sectionAria(name)} className="flex flex-col gap-3 rounded-lg border border-line bg-panel p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-display text-lg font-semibold">
-          {name} <span className="text-sm font-normal text-muted">({chart.unit})</span>
+          {name} <span className="text-sm font-normal text-muted">({unit})</span>
         </h2>
         {shown.some((e) => e.simulated) && <SimulatedTag />}
       </div>
 
       {shown.length === 0 ? (
-        <p className="text-sm text-muted">Not logged yet.</p>
+        <p className="text-sm text-muted">{t.trends.notLoggedYet}</p>
       ) : (
         <>
-          <div role="img" aria-label={`${name} by mission day, ${shown.length} readings. ${outsideText}`} className="h-56">
+          <div role="img" aria-label={t.trends.chartAria(name, shown.length, outsideText)} className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data} margin={{ top: 8, right: 12, bottom: 4, left: -12 }}>
                 <CartesianGrid stroke="var(--color-line)" strokeOpacity={0.5} vertical={false} />
@@ -231,12 +237,13 @@ function TrendChart({ id, name, entries }: { id: IndicatorId; name: string; entr
                 <YAxis
                   domain={[(min: number) => Math.min(min, lo), (max: number) => Math.max(max, hi)]}
                   allowDecimals={id !== 'mood'}
+                  tickFormatter={tick}
                   tick={{ fill: 'var(--color-muted)', fontSize: 12 }}
                   stroke="var(--color-line)"
                 />
                 <Tooltip
-                  labelFormatter={(day) => `Mission day ${day}`}
-                  formatter={(value, label) => [`${value} ${chart.unit}`, label]}
+                  labelFormatter={(day) => t.trends.tooltipDay(String(day))}
+                  formatter={(value, label) => [`${num(Number(value), lang, chart.decimals, false)} ${unit}`, label]}
                   contentStyle={{ background: 'var(--color-raised)', border: '1px solid var(--color-line)' }}
                   labelStyle={{ color: 'var(--color-ink)' }}
                   itemStyle={{ color: 'var(--color-ink)' }}
@@ -245,7 +252,7 @@ function TrendChart({ id, name, entries }: { id: IndicatorId; name: string; entr
                   <Line
                     key={s.key}
                     dataKey={s.key}
-                    name={s.label}
+                    name={s.label(c)}
                     stroke="var(--color-accent)"
                     strokeWidth={1.75}
                     strokeDasharray={s.dashed ? '5 4' : undefined}
@@ -263,11 +270,11 @@ function TrendChart({ id, name, entries }: { id: IndicatorId; name: string; entr
             </ResponsiveContainer>
           </div>
           <p className="text-sm">{outsideText}</p>
-          {chart.note && <p className="text-xs text-muted">{chart.note}</p>}
+          {chart.note && <p className="text-xs text-muted">{chart.note(t)}</p>}
         </>
       )}
 
-      <p className="mt-auto border-t border-line pt-3 text-xs text-muted">{REFERENCE_RANGE_LABEL}</p>
+      <p className="mt-auto border-t border-line pt-3 text-xs text-muted">{c.referenceRangeLabel}</p>
     </section>
   )
 }

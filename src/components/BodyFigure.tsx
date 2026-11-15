@@ -6,15 +6,22 @@ import { createPortal } from 'react-dom'
 import bodySvg from '../assets/body.svg?raw'
 import type { Status } from '../content/indicators'
 import type { RegionId } from '../content/evidence'
+import { useLang } from '../i18n/LangProvider'
+import type { Dict } from '../i18n/ui'
 import { STATUS_UI } from './StatusBadge'
 
 /** What a region shows: a status, "not logged", or "information only". */
 export type RegionState = Status | 'none' | 'info'
 
-export const REGION_STATE_UI: Record<RegionState, { label: string; Icon: LucideIcon; text: string }> = {
+export const REGION_STATE_UI: Record<RegionState, { Icon: LucideIcon; text: string }> = {
   ...STATUS_UI,
-  none: { label: 'Not logged', Icon: CircleDashed, text: 'text-muted' },
-  info: { label: 'Information only', Icon: Info, text: 'text-accent' },
+  none: { Icon: CircleDashed, text: 'text-muted' },
+  info: { Icon: Info, text: 'text-accent' },
+}
+
+/** The words for a region state, in the chosen language. */
+export function regionStateLabel(state: RegionState, t: Dict): string {
+  return state === 'none' || state === 'info' ? t.regionState[state] : t.status[state]
 }
 
 type Marker = { id: RegionId; x: number; y: number }
@@ -33,6 +40,7 @@ export default function BodyFigure({
   selected: RegionId
   onSelect: (id: RegionId) => void
 }) {
+  const { t } = useLang()
   const ref = useRef<HTMLDivElement>(null)
   const [layer, setLayer] = useState<SVGGElement | null>(null)
   const [markers, setMarkers] = useState<Marker[]>([])
@@ -43,7 +51,6 @@ export default function BodyFigure({
     const svg = ref.current?.querySelector('svg')
     if (!svg) return
     svg.setAttribute('role', 'group')
-    svg.setAttribute('aria-label', 'Body map')
     svg.removeAttribute('width')
     svg.removeAttribute('height')
 
@@ -76,15 +83,16 @@ export default function BodyFigure({
     // Runs once: the region ids are fixed and the SVG markup never changes.
   }, [])
 
-  // Every render: status, label and selection on each region element.
+  // Every render: status, label and selection on each region element, in the chosen language.
   useEffect(() => {
     const svg = ref.current?.querySelector('svg')
     if (!svg) return
+    svg.setAttribute('aria-label', t.bodyMap.figureLabel)
     for (const { id, label, state } of regions) {
       const el = svg.querySelector(`[data-region="${id}"]`)
       if (!el) continue
       el.setAttribute('data-status', state)
-      el.setAttribute('aria-label', `${label}: ${REGION_STATE_UI[state].label}`)
+      el.setAttribute('aria-label', `${label}: ${regionStateLabel(state, t)}`)
       el.setAttribute('aria-pressed', String(id === selected))
     }
   })

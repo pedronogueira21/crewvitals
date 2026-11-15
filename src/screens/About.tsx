@@ -2,19 +2,18 @@ import type { ReactNode } from 'react'
 import DataModeTag from '../components/DataModeTag'
 import { ModesTag } from '../components/RadiationPanel'
 import SourcedList from '../components/SourcedList'
-import { ESCALATION, SOURCES } from '../content/evidence'
-import { REFERENCE_RANGE_LABEL } from '../content/indicators'
+import { ESCALATION, SOURCES, teamText } from '../content/evidence'
+import { useLang } from '../i18n/LangProvider'
 import { useRadiation, useSpaceWeather, useStudies } from '../lib/api'
 import type { Loaded } from '../lib/api'
 import { RADIATION_ENVIRONMENTS, RADLAB_DAY, STUDY_KEYWORDS } from '../lib/nasa'
 import type { Mode } from '../lib/nasa'
-import { formatDate } from '../lib/mission'
 
 const link = 'text-accent underline'
 
-function Ext({ href, children }: { href: string; children: ReactNode }) {
+function Ext({ href, children, lang }: { href: string; children: ReactNode; lang?: string }) {
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className={link}>
+    <a href={href} target="_blank" rel="noopener noreferrer" lang={lang} className={link}>
       {children}
     </a>
   )
@@ -33,16 +32,18 @@ function Section({ id, title, children }: { id: string; title: string; children:
 
 /** Live/Snapshot label for one data source, while loading or after. */
 function ModeOf({ loaded }: { loaded: Loaded<unknown> }) {
-  if (loaded.state === 'loading') return <p className="text-xs text-muted">Checking…</p>
-  if (loaded.state === 'error') return <p className="text-xs text-muted">Unavailable right now</p>
+  const { t } = useLang()
+  if (loaded.state === 'loading') return <p className="text-xs text-muted">{t.mode.checking}</p>
+  if (loaded.state === 'error') return <p className="text-xs text-muted">{t.mode.unavailable}</p>
   return <DataModeTag mode={loaded.result.mode} retrieved={loaded.result.retrieved} />
 }
 
 /** OSDR is fetched per keyword; the label summarizes all of them. */
 function OsdrMode() {
+  const { t, date } = useLang()
   // STUDY_KEYWORDS is a constant list, so the hooks run in the same order every render.
   const all = STUDY_KEYWORDS.map((term) => ({ term, loaded: useStudies(term) }))
-  if (all.some((k) => k.loaded.state === 'loading')) return <p className="text-xs text-muted">Checking…</p>
+  if (all.some((k) => k.loaded.state === 'loading')) return <p className="text-xs text-muted">{t.mode.checking}</p>
   const ready = all.flatMap((k) => (k.loaded.state === 'ready' ? [{ term: k.term, ...k.loaded.result }] : []))
   const modes = new Set<Mode>(ready.map((r) => r.mode))
   if (ready.length === all.length && modes.size === 1) {
@@ -52,25 +53,14 @@ function OsdrMode() {
   const snapshot = ready.filter((r) => r.mode === 'snapshot')
   return (
     <p className="text-xs text-muted">
-      {live.length > 0 && `Live: ${live.join(', ')}. `}
-      {snapshot.length > 0 &&
-        `Snapshot — retrieved ${formatDate(snapshot[0].retrieved)}: ${snapshot.map((r) => r.term).join(', ')}. `}
-      {ready.length < all.length && 'Some keywords are unavailable right now.'}
+      {live.length > 0 && t.about.osdrLive(live.join(', '))}
+      {snapshot.length > 0 && t.about.osdrSnapshot(date(snapshot[0].retrieved), snapshot.map((r) => r.term).join(', '))}
+      {ready.length < all.length && t.about.osdrMissing}
     </p>
   )
 }
 
-function DataSource({
-  name,
-  href,
-  mode,
-  children,
-}: {
-  name: string
-  href: string
-  mode: ReactNode
-  children: ReactNode
-}) {
+function DataSource({ name, href, mode, children }: { name: string; href: string; mode: ReactNode; children: ReactNode }) {
   return (
     <li className="flex flex-col gap-2 rounded-lg border border-line bg-panel p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -85,121 +75,77 @@ function DataSource({
 }
 
 export default function About() {
+  const { t, c, lang, date } = useLang()
   const spaceWeather = useSpaceWeather()
   // RADIATION_ENVIRONMENTS is a constant list, so the hooks run in the same order every render.
   const radiation = RADIATION_ENVIRONMENTS.map((env) => useRadiation(env.id))
+  const a = t.about
 
   return (
     <div className="flex max-w-3xl flex-col gap-10">
       <div>
-        <h1 className="font-display text-4xl font-semibold">About CrewVitals</h1>
-        <p className="mt-2 text-muted">
-          A health self-assessment app for astronauts on long-duration missions, built for the NASA Space Apps
-          Challenge 2026 ("Create Health Monitoring Software for Astronauts on Space Missions").
-        </p>
+        <h1 className="font-display text-4xl font-semibold">{a.title}</h1>
+        <p className="mt-2 text-muted">{a.intro}</p>
       </div>
 
-      <Section id="disclaimer-heading" title="Not a medical device">
-        <p className="rounded-lg border border-alert px-4 py-3 font-semibold">
-          This is a hackathon prototype, not a medical device. Do not use it to make medical decisions.
-        </p>
+      <Section id="disclaimer-heading" title={a.disclaimerHeading}>
+        <p className="rounded-lg border border-alert px-4 py-3 font-semibold">{a.disclaimer}</p>
         <p>
-          <span className="font-semibold">{REFERENCE_RANGE_LABEL}.</span> The green, yellow and red thresholds are
-          terrestrial adult clinical reference ranges. They are not NASA flight rules and not limits defined for
-          spaceflight. The guidance and self-care steps are general wellness text, drafted with AI assistance (see Use of AI below). Thresholds and guidance were reviewed by the team's biomedical engineer on 14 Nov 2026.
+          <span className="font-semibold">{c.referenceRangeLabel}.</span> {a.thresholds}
         </p>
-        <p>
-          Data loaded with "Load demo mission" is simulated crew data, and is labelled "Simulated crew data"
-          wherever it appears.
-        </p>
-        <p>
-          There is no login and no account. Your health entries stay in this browser (localStorage) and are never
-          sent to a server. "Clear data" on the dashboard deletes them.
-        </p>
-        <p className="text-sm text-muted">
-          CrewVitals is not affiliated with or endorsed by NASA. It uses public NASA data and pages, credited below.
-        </p>
+        <p>{a.simulated}</p>
+        <p>{a.privacy}</p>
+        <p className="text-sm text-muted">{a.notAffiliated}</p>
       </Section>
 
-      <Section id="sources-heading" title="Data sources">
+      <Section id="sources-heading" title={a.sourcesHeading}>
         <p className="text-sm text-muted">
-          Each NASA data panel is labelled <span className="text-ok">Live</span> when the data was fetched from
-          NASA just now, or "Snapshot — retrieved &lt;date&gt;" when it comes from a copy bundled with the app.
-          The labels below show the mode right now.
+          {a.modesBefore}
+          <span className="text-ok">{t.mode.live}</span>
+          {a.modesAfter}
         </p>
         <ul className="flex flex-col gap-3">
           <DataSource name="NASA CCMC DONKI" href="https://ccmc.gsfc.nasa.gov/DONKI/" mode={<ModeOf loaded={spaceWeather} />}>
-            <p>Solar flares and solar energetic particle events of the last 7 days, for the space weather banner.</p>
-            <p className="mt-1 text-ink">Space weather data: NASA CCMC DONKI.</p>
+            <p>{a.donki}</p>
+            <p className="mt-1 text-ink">{a.donkiCredit}</p>
           </DataSource>
           <DataSource name="NASA OSDR (Open Science Data Repository)" href="https://osdr.nasa.gov/" mode={<OsdrMode />}>
-            Study search results for a fixed keyword per indicator, shown in the body map as related open-science
-            studies. Relevance is loose, many studies are on animals or on the ground, and none of them are
-            astronaut health data.
+            {a.osdr}
           </DataSource>
           <DataSource name="NASA OSDR RadLab" href="https://visualization.osdr.nasa.gov/radlab/" mode={<ModesTag all={radiation} />}>
-            Absorbed dose rate measured on {formatDate(RADLAB_DAY)} by six instruments: ISS (DosTel1), lunar orbit
-            (LRO CRaTER), cislunar flight inside Orion (Artemis I, HERA), deep space (BioSentinel BPD), Mars orbit
-            (TGO Liulin-MO) and Mars surface (Curiosity MSL-RAD), for the radiation panel. They are measured dose
-            rates at each instrument, not comparable crew doses. The cumulative dose shown is an illustration, not a
-            personal dose record.
+            {a.radlab(date(RADLAB_DAY))}
           </DataSource>
         </ul>
 
-        <h3 className="mt-2 font-semibold">NASA pages behind the spaceflight context</h3>
-        <p className="text-sm text-muted">
-          The statements in the body map and below paraphrase these pages and are bundled with the app. They
-          were drafted with Claude (see Use of AI below) and checked against their source pages by our team on 14 Nov
-          2026. Each statement links to its page.
-        </p>
+        <h3 className="mt-2 font-semibold">{a.pagesHeading}</h3>
+        <p className="text-sm text-muted">{a.pages}</p>
         <ul className="flex flex-col gap-1">
           {Object.values(SOURCES).map((s) => (
             <li key={s.url}>
-              <Ext href={s.url}>{s.title}</Ext>
+              <Ext href={s.url} lang="en">
+                {s.title}
+              </Ext>
+              {t.nasaText.sourceSuffix}
             </li>
           ))}
         </ul>
       </Section>
 
-      <Section id="escalation-heading" title="Medical care far from Earth">
-        <p className="text-sm text-muted">Paraphrased from NASA sources.</p>
+      <Section id="escalation-heading" title={a.escalationHeading}>
+        <p className="text-sm text-muted">{t.nasaText.listLabel}</p>
         <SourcedList statements={ESCALATION.nasa} />
         <div className="flex flex-col gap-1 border-t border-line pt-3">
-          <h3 className="font-semibold">How the app escalates</h3>
-          <p>{ESCALATION.team}</p>
-          <p className="text-xs text-muted">
-            Our team's design rationale, drafted with Claude. Not a NASA statement.
-          </p>
+          <h3 className="font-semibold">{a.howEscalates}</h3>
+          <p>{teamText(ESCALATION, lang)}</p>
+          <p className="text-xs text-muted">{t.nasaText.teamRationale}</p>
         </div>
       </Section>
 
-      <Section id="ai-heading" title="Use of AI">
+      <Section id="ai-heading" title={a.aiHeading}>
         <ul className="flex list-disc flex-col gap-2 pl-5">
-          <li>Claude (Anthropic) was used to plan the project and write its specification.</li>
-          <li>
-            The app's code was written with Claude Code, Anthropic's AI coding assistant, and reviewed by our
-            team.
-          </li>
-          <li>Claude drafted the interface text and the self-care steps.</li>
-          <li>
-            Claude drafted the paraphrases of NASA pages shown in the body map and on this page, working from the
-            page linked beside each statement. Our team checked each one against its source page on 14 Nov 2026.
-          </li>
-          <li>
-            Claude also drafted the team's design rationale texts ("Why we track this" in the body map and "How the
-            app escalates" on this page). They are labelled as our rationale, not NASA statements.
-          </li>
-          <li>
-            Gemini (Google) was used by the team's biomedical engineer as an aid when reviewing the thresholds and
-            guidance (review completed 14 Nov 2026).
-          </li>
-          <li>The body map figure is a schematic drawn in code with AI assistance.</li>
-          <li>The browser-tab icon (a pulse line crossing a ring) is an original mark drawn in code with AI assistance.</li>
-          <li>No images were generated with AI, and the app uses no NASA logos, insignia or mission patches.</li>
-          <li>
-            The app itself uses no AI: statuses, alerts and guidance come from fixed rules that the team can read
-            and edit.
-          </li>
+          {a.ai.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
         </ul>
       </Section>
     </div>

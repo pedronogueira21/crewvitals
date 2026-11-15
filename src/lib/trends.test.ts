@@ -1,15 +1,7 @@
 // Trend rules, sleep/mood guidance and the demo mission (SPEC.md sections 3 and 4).
 import { describe, expect, it } from 'vitest'
-import {
-  GUIDANCE,
-  INDICATORS,
-  MARS_TRANSIT_NOTE,
-  RED_TREND_OVERALL,
-  SELF_CARE_GUIDANCE,
-  guidanceFor as guidanceForSetting,
-  readIndicator,
-} from '../content/indicators'
-import type { Reading } from '../content/indicators'
+import { CLINICAL, INDICATOR_IDS, guidanceFor, readIndicator, redTrendOverall } from '../content/indicators'
+import { LANGS } from '../i18n/format'
 import type { Entry } from '../types'
 import { demoMission } from './demo'
 import { trendAlerts } from './trends'
@@ -54,27 +46,28 @@ describe('trend rules', () => {
   })
 })
 
-const guidanceFor = (readings: Reading[]) => guidanceForSetting(readings, 'ISS')
+const read = (values: Partial<Entry>) => INDICATOR_IDS.flatMap((id) => readIndicator(id, day(1, values)) ?? [])
 
-describe('guidance for sleep and mood', () => {
-  const read = (values: Partial<Entry>) => INDICATORS.flatMap((i) => readIndicator(i.id, day(1, values)) ?? [])
+describe.each(LANGS)('guidance for sleep and mood (%s)', (lang) => {
+  const c = CLINICAL[lang]
+  const g = (values: Partial<Entry>) => guidanceFor(read(values), 'ISS', lang)
   it('red sleep or mood alone: self-care text', () => {
-    expect(guidanceFor(read({ sleepHours: 4 }))).toBe(SELF_CARE_GUIDANCE.red)
-    expect(guidanceFor(read({ mood: 1, heartRate: 105 }))).toBe(SELF_CARE_GUIDANCE.red)
+    expect(g({ sleepHours: 4 })).toBe(c.selfCareGuidance.red)
+    expect(g({ mood: 1, heartRate: 105 })).toBe(c.selfCareGuidance.red)
   })
   it('yellow sleep or mood alone: self-care text', () => {
-    expect(guidanceFor(read({ sleepHours: 6.5 }))).toBe(SELF_CARE_GUIDANCE.yellow)
-    expect(guidanceFor(read({ mood: 3, temperatureC: 36.8 }))).toBe(SELF_CARE_GUIDANCE.yellow)
+    expect(g({ sleepHours: 6.5 })).toBe(c.selfCareGuidance.yellow)
+    expect(g({ mood: 3, temperatureC: 36.8 })).toBe(c.selfCareGuidance.yellow)
   })
   it('self-care texts never say re-measure or refer to the Crew Medical Officer', () => {
-    for (const text of Object.values(SELF_CARE_GUIDANCE)) {
-      expect(text).not.toMatch(/re-measure|Crew Medical Officer/i)
+    for (const text of Object.values(c.selfCareGuidance)) {
+      expect(text).not.toMatch(/re-measure|meça novamente|Crew Medical Officer|Oficial Médico/i)
     }
   })
   it('any other indicator at the worst status keeps the standard guidance', () => {
-    expect(guidanceFor(read({ temperatureC: 38.5, sleepHours: 4 }))).toBe(GUIDANCE.red)
-    expect(guidanceFor(read({ heartRate: 105, mood: 3 }))).toBe(GUIDANCE.yellow)
-    expect(guidanceFor(read({ heartRate: 105, mood: 1 }))).toBe(SELF_CARE_GUIDANCE.red)
+    expect(g({ temperatureC: 38.5, sleepHours: 4 })).toBe(c.guidance.red)
+    expect(g({ heartRate: 105, mood: 3 })).toBe(c.guidance.yellow)
+    expect(g({ heartRate: 105, mood: 1 })).toBe(c.selfCareGuidance.red)
   })
 })
 
@@ -87,7 +80,7 @@ describe('demo mission', () => {
     expect(entries.every((e) => e.simulated)).toBe(true)
   })
   it('last day shows all three status colours', () => {
-    const statuses = INDICATORS.map((i) => readIndicator(i.id, entries.at(-1)!)?.status)
+    const statuses = INDICATOR_IDS.map((id) => readIndicator(id, entries.at(-1)!)?.status)
     expect(new Set(statuses)).toEqual(new Set(['green', 'yellow', 'red']))
   })
   it('ends with a sleep-debt and a cardiovascular trend alert', () => {
@@ -95,23 +88,23 @@ describe('demo mission', () => {
   })
   it('every other day is green except the planned anomalies', () => {
     const offDays = entries.filter((e) =>
-      INDICATORS.some((i) => readIndicator(i.id, e)?.status !== 'green'),
+      INDICATOR_IDS.some((id) => readIndicator(id, e)?.status !== 'green'),
     ).map((e) => e.missionDay)
     expect(offDays).toEqual([6, 7, 12, 17, 18, 22, 26, 28, 29, 30])
   })
 })
 
-describe('mission setting (SPEC section 5)', () => {
-  const read = (values: Partial<Entry>) => INDICATORS.flatMap((i) => readIndicator(i.id, day(1, values)) ?? [])
+describe.each(LANGS)('mission setting, SPEC section 5 (%s)', (lang) => {
+  const c = CLINICAL[lang]
   it('Mars transit adds the delay line to red guidance only', () => {
-    expect(guidanceForSetting(read({ temperatureC: 38.5 }), 'Mars transit')).toBe(`${GUIDANCE.red} ${MARS_TRANSIT_NOTE}`)
-    expect(guidanceForSetting(read({ temperatureC: 37.7 }), 'Mars transit')).toBe(GUIDANCE.yellow)
-    expect(guidanceForSetting(read({ sleepHours: 4 }), 'Mars transit')).toBe(SELF_CARE_GUIDANCE.red)
-    expect(RED_TREND_OVERALL(1, 'Mars transit')).toContain(MARS_TRANSIT_NOTE)
+    expect(guidanceFor(read({ temperatureC: 38.5 }), 'Mars transit', lang)).toBe(`${c.guidance.red} ${c.marsNote}`)
+    expect(guidanceFor(read({ temperatureC: 37.7 }), 'Mars transit', lang)).toBe(c.guidance.yellow)
+    expect(guidanceFor(read({ sleepHours: 4 }), 'Mars transit', lang)).toBe(c.selfCareGuidance.red)
+    expect(redTrendOverall(1, 'Mars transit', lang)).toContain(c.marsNote)
   })
   it('ISS and Lunar surface leave the red guidance unchanged', () => {
-    expect(guidanceForSetting(read({ temperatureC: 38.5 }), 'ISS')).toBe(GUIDANCE.red)
-    expect(guidanceForSetting(read({ temperatureC: 38.5 }), 'Lunar surface')).toBe(GUIDANCE.red)
-    expect(RED_TREND_OVERALL(1, 'Lunar surface')).not.toContain(MARS_TRANSIT_NOTE)
+    expect(guidanceFor(read({ temperatureC: 38.5 }), 'ISS', lang)).toBe(c.guidance.red)
+    expect(guidanceFor(read({ temperatureC: 38.5 }), 'Lunar surface', lang)).toBe(c.guidance.red)
+    expect(redTrendOverall(1, 'Lunar surface', lang)).not.toContain(c.marsNote)
   })
 })

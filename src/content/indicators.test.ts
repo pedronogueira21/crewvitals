@@ -1,7 +1,8 @@
 // Checks the status rules against the table in SPEC.md section 4, at every boundary.
 import { describe, expect, it } from 'vitest'
 import type { Entry } from '../types'
-import { INDICATORS, MEASURES, greenRangeText, isUrgent, readIndicator, selfCareSteps, statusOf } from './indicators'
+import { LANGS } from '../i18n/format'
+import { CLINICAL, MEASURES, greenRangeText, isUrgent, readIndicator, selfCareSteps, statusOf } from './indicators'
 import type { MeasureId, Status } from './indicators'
 
 const base: Entry = { missionDay: 1, date: '2026-11-14', simulated: false }
@@ -115,26 +116,34 @@ describe('glucose uses the range that matches the fasting flag', () => {
 })
 
 describe('green range text shown in the UI', () => {
-  it('matches the spec table', () => {
-    expect(greenRangeText(MEASURES.systolic)).toBe('90–129')
-    expect(greenRangeText(MEASURES.diastolic)).toBe('60–79')
-    expect(greenRangeText(MEASURES.heartRate)).toBe('50–100')
-    expect(greenRangeText(MEASURES.glucoseFasting)).toBe('70–99')
-    expect(greenRangeText(MEASURES.glucoseNonFasting)).toBe('70–139')
-    expect(greenRangeText(MEASURES.temperatureC)).toBe('36.0–37.5')
-    expect(greenRangeText(MEASURES.sleepHours)).toBe('≥ 7.0')
-    expect(greenRangeText(MEASURES.mood)).toBe('4–5')
+  it('matches the spec table in English', () => {
+    expect(greenRangeText(MEASURES.systolic, 'en')).toBe('90–129')
+    expect(greenRangeText(MEASURES.diastolic, 'en')).toBe('60–79')
+    expect(greenRangeText(MEASURES.heartRate, 'en')).toBe('50–100')
+    expect(greenRangeText(MEASURES.glucoseFasting, 'en')).toBe('70–99')
+    expect(greenRangeText(MEASURES.glucoseNonFasting, 'en')).toBe('70–139')
+    expect(greenRangeText(MEASURES.temperatureC, 'en')).toBe('36.0–37.5')
+    expect(greenRangeText(MEASURES.sleepHours, 'en')).toBe('≥ 7.0')
+    expect(greenRangeText(MEASURES.mood, 'en')).toBe('4–5')
+  })
+  it('shows the same numbers with a decimal comma in Brazilian Portuguese', () => {
+    expect(greenRangeText(MEASURES.systolic, 'pt-BR')).toBe('90–129')
+    expect(greenRangeText(MEASURES.heartRate, 'pt-BR')).toBe('50–100')
+    expect(greenRangeText(MEASURES.glucoseNonFasting, 'pt-BR')).toBe('70–139')
+    expect(greenRangeText(MEASURES.temperatureC, 'pt-BR')).toBe('36,0–37,5')
+    expect(greenRangeText(MEASURES.sleepHours, 'pt-BR')).toBe('≥ 7,0')
+    expect(greenRangeText(MEASURES.mood, 'pt-BR')).toBe('4–5')
   })
 })
 
-describe('glucose self-care depends on direction', () => {
-  const glucose = INDICATORS.find((i) => i.id === 'glucose')!
+describe.each(LANGS)('glucose self-care depends on direction (%s)', (lang) => {
+  const glucose = CLINICAL[lang].indicators.glucose
   const steps = (value: number, fasting: boolean) =>
-    selfCareSteps(glucose, readIndicator('glucose', { ...base, glucose: value, glucoseFasting: fasting })!)
-  it('fast-acting carbohydrate only for low readings', () => {
-    expect(steps(60, true).join(' ')).toMatch(/fast-acting carbohydrate/)
-    expect(steps(110, true).join(' ')).not.toMatch(/fast-acting carbohydrate/)
-    expect(steps(250, false).join(' ')).not.toMatch(/fast-acting carbohydrate/)
+    selfCareSteps(readIndicator('glucose', { ...base, glucose: value, glucoseFasting: fasting })!, lang)
+  it('the fast-acting carbohydrate step only for low readings', () => {
+    expect(steps(60, true)).toEqual(expect.arrayContaining(glucose.selfCareLow!))
+    expect(steps(110, true)).toEqual(expect.not.arrayContaining(glucose.selfCareLow!))
+    expect(steps(250, false)).toEqual(expect.not.arrayContaining(glucose.selfCareLow!))
   })
   it('high readings get the high steps, low readings do not', () => {
     expect(steps(110, true)).toEqual(expect.arrayContaining(glucose.selfCareHigh!))
@@ -142,5 +151,13 @@ describe('glucose self-care depends on direction', () => {
   })
   it('general steps for both directions', () => {
     for (const v of [60, 110]) expect(steps(v, true)).toEqual(expect.arrayContaining(glucose.selfCare))
+  })
+})
+
+describe('the English low-glucose step is the reviewed text', () => {
+  it('names the carbohydrate amounts', () => {
+    expect(CLINICAL.en.indicators.glucose.selfCareLow).toEqual([
+      'Eat or drink a fast-acting carbohydrate, such as 15 g of glucose tablets or half a cup of fruit juice, then test again after 15 minutes.',
+    ])
   })
 })

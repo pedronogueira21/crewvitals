@@ -18,14 +18,17 @@
     {
       "id": "radiation",
       "name": "Space Radiation",
+      "namePt": "Radiação espacial",
       "nasa": [
         {
           "text": "NASA's Human Research Program describes space radiation as one of the most hazardous aspects of spaceflight.",
-          "source": "hazards"
+          "source": "hazards",
+          "textPt": "O Programa de Pesquisa Humana da NASA descreve a radiação espacial como um dos aspectos mais perigosos dos voos espaciais."
         },
         {
           "text": "A higher risk of cancer and of degenerative diseases such as heart disease and cataracts has been observed in radiation-exposed populations on Earth. For astronauts the main concern is the long-term impact, which depends on the total dose and how quickly it is received.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "Um risco maior de câncer e de doenças degenerativas, como doenças cardíacas e catarata, foi observado em populações expostas à radiação na Terra. Para os astronautas, a principal preocupação é o impacto a longo prazo, que depende da dose total e da rapidez com que ela é recebida."
         }
       ],
       "reviewStatus": "drafted from source, needs human check"
@@ -33,14 +36,17 @@
     {
       "id": "isolation",
       "name": "Isolation and Confinement",
+      "namePt": "Isolamento e confinamento",
       "nasa": [
         {
           "text": "Crews live isolated and confined in a small space for long periods, and NASA studies the behavioral responses this produces.",
-          "source": "hazards"
+          "source": "hazards",
+          "textPt": "As tripulações vivem isoladas e confinadas em um espaço pequeno por longos períodos, e a NASA estuda as respostas comportamentais que isso provoca."
         },
         {
           "text": "Altered light and dark cycles, a small and noisy habitat, and stress can disrupt circadian rhythms, and morale and motivation can change as a mission unfolds.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "Ciclos alterados de luz e escuridão, um habitat pequeno e barulhento e o estresse podem perturbar os ritmos circadianos, e o moral e a motivação podem mudar ao longo da missão."
         }
       ],
       "reviewStatus": "drafted from source, needs human check"
@@ -48,14 +54,17 @@
     {
       "id": "distance",
       "name": "Distance from Earth",
+      "namePt": "Distância da Terra",
       "nasa": [
         {
           "text": "The farther a crew travels, the harder it becomes to receive instructions, supplies, and medical care from Earth.",
-          "source": "hazards"
+          "source": "hazards",
+          "textPt": "Quanto mais longe a tripulação viaja, mais difícil fica receber instruções, suprimentos e atendimento médico da Terra."
         },
         {
           "text": "At Mars, communication can be delayed by up to 20 minutes each way, so crews must be able to handle problems without real-time help from mission control.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "Em Marte, a comunicação pode ter atraso de até 20 minutos em cada sentido, por isso as tripulações precisam ser capazes de lidar com problemas sem ajuda em tempo real do controle da missão."
         }
       ],
       "reviewStatus": "drafted from source, needs human check"
@@ -63,14 +72,17 @@
     {
       "id": "gravity",
       "name": "Gravity Fields",
+      "namePt": "Campos gravitacionais",
       "nasa": [
         {
           "text": "Muscles, bones, the inner ear, and organs all have to adjust each time the crew moves to a different level of gravity.",
-          "source": "hazards"
+          "source": "hazards",
+          "textPt": "Músculos, ossos, o ouvido interno e os órgãos precisam se ajustar cada vez que a tripulação passa para um nível diferente de gravidade."
         },
         {
           "text": "In weightlessness, body fluids shift toward the head, and without countermeasures astronauts lose bone and muscle.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "Na ausência de peso, os fluidos do corpo se deslocam em direção à cabeça e, sem contramedidas, os astronautas perdem massa óssea e muscular."
         }
       ],
       "reviewStatus": "drafted from source, needs human check"
@@ -78,14 +90,17 @@
     {
       "id": "environment",
       "name": "Hostile/Closed Environments",
+      "namePt": "Ambientes hostis/fechados",
       "nasa": [
         {
           "text": "A spacecraft is a closed ecosystem. Temperature, pressure, lighting, noise, microbes, and the crew's immune responses all have to be monitored.",
-          "source": "hazards"
+          "source": "hazards",
+          "textPt": "Uma espaçonave é um ecossistema fechado. Temperatura, pressão, iluminação, ruído, micróbios e as respostas imunológicas da tripulação precisam ser monitorados."
         },
         {
           "text": "In spaceflight, stress hormone levels rise and the immune system is altered, which could make crew members more susceptible to allergies or illness.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "Em voo espacial, os níveis de hormônios do estresse aumentam e o sistema imunológico se altera, o que pode deixar os tripulantes mais suscetíveis a alergias ou doenças."
         }
       ],
       "reviewStatus": "drafted from source, needs human check"
@@ -95,133 +110,163 @@
     {
       "id": "head",
       "label": "Brain and behavior",
+      "labelPt": "Cérebro e comportamento",
       "indicators": ["mood", "sleep"],
       "hazards": ["isolation"],
       "nasa": [
         {
           "text": "Circadian rhythms can be disrupted by altered light and dark cycles, a small and noisy habitat, and stress. On Mars, the day is about 37 minutes longer than on Earth.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "Os ritmos circadianos podem ser perturbados por ciclos alterados de luz e escuridão, um habitat pequeno e barulhento e o estresse. Em Marte, o dia dura cerca de 37 minutos a mais do que na Terra."
         },
         {
           "text": "Morale and motivation can change as a mission unfolds, and more restricted, less connected environments are associated with a higher likelihood of behavioral, cognitive, or psychiatric conditions.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "O moral e a motivação podem mudar ao longo da missão, e ambientes mais restritos e menos conectados estão associados a uma probabilidade maior de condições comportamentais, cognitivas ou psiquiátricas."
         },
         {
           "text": "NASA countermeasures include tracking sleep and activity with actigraphy, LED lighting tuned to support circadian rhythms, a short self-test of vigilance and attention, and journaling.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "As contramedidas da NASA incluem o acompanhamento do sono e da atividade por actigrafia, iluminação LED ajustada para apoiar os ritmos circadianos, um breve autoteste de vigilância e atenção, e a escrita de um diário."
         }
       ],
       "team": "Sleep hours and a one-tap mood rating are the two signals a crew member can log every day without equipment. Several low days in a row are a reason to talk to the crew or the ground, before performance is affected.",
+      "teamPt": "As horas de sono e uma avaliação do humor com um toque são os dois sinais que um tripulante pode registrar todos os dias sem equipamento. Vários dias baixos seguidos são motivo para conversar com a tripulação ou com o solo, antes que o desempenho seja afetado.",
       "reviewStatus": "drafted from source, needs human check"
     },
     {
       "id": "heart",
       "label": "Heart and circulation",
+      "labelPt": "Coração e circulação",
       "indicators": ["bloodPressure", "heartRate"],
       "hazards": ["gravity", "radiation"],
       "nasa": [
         {
           "text": "In weightlessness, fluids move toward the head. This may put pressure on the eyes and affect vision.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "Na ausência de peso, os fluidos se deslocam em direção à cabeça. Isso pode exercer pressão sobre os olhos e afetar a visão."
         },
         {
           "text": "After spaceflight, some astronauts cannot maintain their blood pressure when they stand up, which can lead to lightheadedness and fainting. Some decline in heart function has also been noted.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "Após o voo espacial, alguns astronautas não conseguem manter a pressão arterial ao ficar de pé, o que pode levar a tontura e desmaio. Também foi observado algum declínio da função cardíaca."
         },
         {
           "text": "A higher risk of degenerative diseases, including heart disease, has been observed in radiation-exposed populations on Earth.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "Um risco maior de doenças degenerativas, incluindo doenças cardíacas, foi observado em populações expostas à radiação na Terra."
         },
         {
           "text": "NASA countermeasures include aerobic and resistive exercise, fluid monitoring, and thigh compression cuffs. A lower-body negative pressure device is being considered.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "As contramedidas da NASA incluem exercícios aeróbicos e resistidos, monitoramento de líquidos e manguitos de compressão para as coxas. Um dispositivo de pressão negativa na parte inferior do corpo está sendo considerado."
         }
       ],
       "team": "Blood pressure and resting heart rate are quick to measure and show how the cardiovascular system is coping with fluid shifts and with the exercise program. A trend matters more than one reading.",
+      "teamPt": "A pressão arterial e a frequência cardíaca de repouso são rápidas de medir e mostram como o sistema cardiovascular está lidando com o deslocamento de fluidos e com o programa de exercícios. Uma tendência importa mais do que uma única medição.",
       "reviewStatus": "drafted from source, needs human check"
     },
     {
       "id": "abdomen",
       "label": "Metabolism and nutrition",
+      "labelPt": "Metabolismo e nutrição",
       "indicators": ["glucose"],
       "hazards": ["distance", "gravity"],
       "nasa": [
         {
           "text": "On a mission far from Earth there is no resupply. The crew carries all of its food, equipment, and medical supplies, and NASA researches how to keep food and medication usable for the whole mission.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "Em uma missão longe da Terra não há reabastecimento. A tripulação leva todos os seus alimentos, equipamentos e suprimentos médicos, e a NASA pesquisa como manter alimentos e medicamentos utilizáveis durante toda a missão."
         },
         {
           "text": "Researchers analyze astronauts' urine for kidney stone risk and adjust diet, exercise, and water intake to prevent it.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "Pesquisadores analisam a urina dos astronautas para avaliar o risco de cálculo renal e ajustam a dieta, os exercícios e a ingestão de água para preveni-lo."
         }
       ],
       "team": "Blood glucose is a simple, self-measured marker of how diet and routine are affecting a crew member. We track it as a nutrition signal. The sources above do not state that spaceflight changes blood glucose, and this app does not claim that it does.",
+      "teamPt": "A glicemia é um marcador simples, medido pelo próprio tripulante, de como a dieta e a rotina o estão afetando. Nós a acompanhamos como um sinal de nutrição. As fontes acima não afirmam que o voo espacial altera a glicemia, e este aplicativo não afirma isso.",
       "reviewStatus": "drafted from source, needs human check"
     },
     {
       "id": "core",
       "label": "Immune system and body temperature",
+      "labelPt": "Sistema imunológico e temperatura corporal",
       "indicators": ["temperature"],
       "hazards": ["environment"],
       "nasa": [
         {
           "text": "In spaceflight, stress hormone levels rise and the immune system is altered, which could increase susceptibility to allergies or illness.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "Em voo espacial, os níveis de hormônios do estresse aumentam e o sistema imunológico se altera, o que pode aumentar a suscetibilidade a alergias ou doenças."
         },
         {
           "text": "Microbes change in space, and microbes that live on people spread more easily from person to person in a closed habitat.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "Os micróbios mudam no espaço, e os micróbios que vivem nas pessoas se espalham com mais facilidade de pessoa para pessoa em um habitat fechado."
         },
         {
           "text": "NASA countermeasures include air quality monitoring, thermal control of the habitat, blood and saliva analysis, testing for reactivated latent viruses, and regular cleaning and microbial sampling.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "As contramedidas da NASA incluem monitoramento da qualidade do ar, controle térmico do habitat, análise de sangue e saliva, testes para vírus latentes reativados, e limpeza e amostragem microbiana regulares."
         }
       ],
       "team": "Body temperature is the simplest early sign of infection. In a closed habitat with an altered immune system, a fever is worth reporting early.",
+      "teamPt": "A temperatura corporal é o sinal precoce mais simples de infecção. Em um habitat fechado e com o sistema imunológico alterado, vale a pena relatar uma febre cedo.",
       "reviewStatus": "drafted from source, needs human check"
     },
     {
       "id": "bones",
       "label": "Bones and muscles",
+      "labelPt": "Ossos e músculos",
       "indicators": [],
       "hazards": ["gravity"],
       "nasa": [
         {
           "text": "In spaceflight, weight-bearing bones lose on average 1% to 1.5% of their mineral density per month.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "Em voo espacial, os ossos que sustentam o peso do corpo perdem em média de 1% a 1,5% de sua densidade mineral por mês."
         },
         {
           "text": "Muscle is lost faster in microgravity without proper diet and exercise, and bone loss raises calcium excretion, which together with dehydration can increase the risk of kidney stones.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "Em microgravidade, perde-se músculo mais rápido sem dieta e exercícios adequados, e a perda óssea aumenta a excreção de cálcio, o que, junto com a desidratação, pode aumentar o risco de cálculos renais."
         },
         {
           "text": "NASA countermeasures include aerobic and resistive exercise, bisphosphonates for bone loss, potassium citrate (under study) for kidney stone risk, and imaging of muscle and bone.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "As contramedidas da NASA incluem exercícios aeróbicos e resistidos, bisfosfonatos para a perda óssea, citrato de potássio (em estudo) para o risco de cálculos renais, e exames de imagem de músculos e ossos."
         }
       ],
       "team": "Bone and muscle loss cannot be self-measured with a simple daily reading, so this region is information only. It is here because it is the reason the daily exercise routine matters.",
+      "teamPt": "A perda óssea e muscular não pode ser medida pelo próprio tripulante com uma simples medição diária, por isso esta região é apenas informativa. Ela está aqui porque é a razão pela qual a rotina diária de exercícios importa.",
       "reviewStatus": "drafted from source, needs human check"
     },
     {
       "id": "whole-body",
       "label": "Radiation exposure",
+      "labelPt": "Exposição à radiação",
       "indicators": [],
       "hazards": ["radiation"],
       "nasa": [
         {
           "text": "A higher risk of cancer and of degenerative diseases such as heart disease and cataracts has been observed in radiation-exposed populations on Earth. The main concern for astronauts is the long-term impact.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "Um risco maior de câncer e de doenças degenerativas, como doenças cardíacas e catarata, foi observado em populações expostas à radiação na Terra. A principal preocupação para os astronautas é o impacto a longo prazo."
         },
         {
           "text": "Missions to the Moon and Mars will last much longer than a typical six-month stay on the space station, so the total radiation received, and the associated risk, may be higher.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "Missões à Lua e a Marte vão durar muito mais do que uma estadia típica de seis meses na estação espacial, por isso a radiação total recebida, e o risco associado, podem ser maiores."
         },
         {
           "text": "NASA countermeasures include shielding, radiation monitoring, and operational procedures.",
-          "source": "bodyInSpace"
+          "source": "bodyInSpace",
+          "textPt": "As contramedidas da NASA incluem blindagem, monitoramento da radiação e procedimentos operacionais."
         }
       ],
       "team": "This panel shows radiation dose rates measured by instruments aboard the International Space Station and on other spacecraft from low Earth orbit to the surface of Mars, from NASA's RadLab database, and recent solar events from NASA's DONKI space weather database. The cumulative dose shown is an illustration for the mission day, not a personal dose record.",
+      "teamPt": "Este painel mostra taxas de dose de radiação medidas por instrumentos a bordo da Estação Espacial Internacional e de outras espaçonaves, da órbita baixa da Terra até a superfície de Marte, do banco de dados RadLab da NASA, e eventos solares recentes do banco de dados de clima espacial DONKI da NASA. A dose acumulada mostrada é uma ilustração para o dia da missão, não um registro pessoal de dose.",
       "reviewStatus": "drafted from source, needs human check"
     }
   ],
@@ -229,14 +274,17 @@
     "nasa": [
       {
         "text": "At Mars, communication can be delayed by up to 20 minutes each way, so crews must be able to solve problems without real-time help from mission control.",
-        "source": "bodyInSpace"
+        "source": "bodyInSpace",
+        "textPt": "Em Marte, a comunicação pode ter atraso de até 20 minutos em cada sentido, por isso as tripulações precisam ser capazes de resolver problemas sem ajuda em tempo real do controle da missão."
       },
       {
         "text": "NASA prepares crews for this with medical training, crew-performed ultrasound scans, onboard lab testing, and research into clinical decision support tools.",
-        "source": "bodyInSpace"
+        "source": "bodyInSpace",
+        "textPt": "A NASA prepara as tripulações para isso com treinamento médico, exames de ultrassom feitos pela própria tripulação, testes de laboratório a bordo e pesquisa em ferramentas de apoio à decisão clínica."
       }
     ],
     "team": "This is why the app gives self-care steps first and tells the crew member when a result should go to the Crew Medical Officer or the flight surgeon.",
+    "teamPt": "Por isso o aplicativo mostra primeiro os passos de autocuidado e avisa o tripulante quando um resultado deve ser levado ao Oficial Médico da Tripulação ou ao médico de voo.",
     "reviewStatus": "drafted from source, needs human check"
   }
 }

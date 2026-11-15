@@ -1,14 +1,14 @@
 // Trend rules from SPEC.md section 4, evaluated on the last 3 entries.
-import { INDICATORS, TREND_TEXT, readIndicator } from '../content/indicators'
-import type { IndicatorId, Status } from '../content/indicators'
+// The rules are language-free; trendAlertText gives the words.
+import { CLINICAL, INDICATOR_IDS, forSetting, readIndicator } from '../content/indicators'
+import type { IndicatorId, MissionSetting, Status } from '../content/indicators'
+import type { Lang } from '../i18n/format'
 import type { Entry } from '../types'
 
 export type TrendAlert = {
   kind: 'escalation' | 'sleepDebt' | 'behavioralHealth' | 'cardiovascular'
   indicatorId: IndicatorId
   status: Status
-  title: string
-  action: string
   /** First and last mission day of the 3 entries. */
   days: [number, number]
 }
@@ -29,18 +29,34 @@ export function trendAlerts(entries: Entry[]): TrendAlert[] {
   const days: [number, number] = [last[0].missionDay, last[2].missionDay]
 
   const alerts: TrendAlert[] = []
-  for (const { id, name } of INDICATORS) {
+  for (const id of INDICATOR_IDS) {
     const statuses = last.map((e) => readIndicator(id, e)?.status)
     if (statuses.every((s) => s === 'red')) {
       const kind = id === 'sleep' ? 'sleepDebt' : id === 'mood' ? 'behavioralHealth' : 'escalation'
-      const text = kind === 'escalation' ? TREND_TEXT.escalation(name) : TREND_TEXT[kind]
-      alerts.push({ kind, indicatorId: id, status: 'red', days, ...text })
+      alerts.push({ kind, indicatorId: id, status: 'red', days })
     } else if (
       (id === 'bloodPressure' || id === 'heartRate') &&
       statuses.every((s) => s === 'yellow' || s === 'red')
     ) {
-      alerts.push({ kind: 'cardiovascular', indicatorId: id, status: 'yellow', days, ...TREND_TEXT.cardiovascular(name) })
+      alerts.push({ kind: 'cardiovascular', indicatorId: id, status: 'yellow', days })
     }
   }
   return alerts
+}
+
+/** Title and action of an alert. Red alerts add the Mars-transit line when that setting is chosen. */
+export function trendAlertText(alert: TrendAlert, setting: MissionSetting, lang: Lang): { title: string; action: string } {
+  const c = CLINICAL[lang]
+  const name = c.indicators[alert.indicatorId].name
+  const red = (text: string) => forSetting(text, setting, lang)
+  switch (alert.kind) {
+    case 'escalation':
+      return { title: c.trend.escalation(name), action: red(c.escalate) }
+    case 'sleepDebt':
+      return { title: c.trend.sleepDebt, action: red(c.escalate) }
+    case 'behavioralHealth':
+      return { title: c.trend.behavioralHealth, action: red(c.escalate) }
+    case 'cardiovascular':
+      return { title: c.trend.cardiovascular(name), action: c.trend.cardiovascularAction }
+  }
 }

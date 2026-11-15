@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import bodySvg from '../assets/body.svg?raw'
 import { ESCALATION, HAZARDS, REGION_IDS, REGIONS, SOURCES } from './evidence'
-import { INDICATORS } from './indicators'
+import { INDICATOR_IDS } from './indicators'
 
 describe('evidence.json', () => {
   const statements = [...REGIONS.flatMap((r) => r.nasa), ...HAZARDS.flatMap((h) => h.nasa)]
@@ -16,7 +16,7 @@ describe('evidence.json', () => {
     }
   })
   it('every region names known indicators and hazards, and has team rationale', () => {
-    const indicatorIds = INDICATORS.map((i) => i.id) as string[]
+    const indicatorIds = INDICATOR_IDS as string[]
     const hazardIds = HAZARDS.map((h) => h.id)
     for (const r of REGIONS) {
       for (const id of r.indicators) expect(indicatorIds, r.id).toContain(id)
@@ -28,9 +28,18 @@ describe('evidence.json', () => {
     const delay = ESCALATION.nasa.find((s) => /communication/i.test(s.text))
     expect(delay && SOURCES[delay.source]?.url).toMatch(/^https:\/\//)
   })
+  it('every English text has a Portuguese version beside it, with the same source key', () => {
+    for (const s of [...statements, ...ESCALATION.nasa]) {
+      expect(s.textPt, s.text).toBeTruthy()
+      expect(s.textPt, s.text).not.toBe(s.text)
+    }
+    for (const r of REGIONS) expect(r.labelPt && r.teamPt, r.id).toBeTruthy()
+    for (const h of HAZARDS) expect(h.namePt, h.id).toBeTruthy()
+    expect(ESCALATION.teamPt).toBeTruthy()
+  })
   it('every indicator appears in exactly one region', () => {
     const used = REGIONS.flatMap((r) => r.indicators).sort()
-    expect(used).toEqual(INDICATORS.map((i) => i.id).sort())
+    expect(used).toEqual([...INDICATOR_IDS].sort())
   })
 })
 

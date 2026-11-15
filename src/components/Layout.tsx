@@ -1,28 +1,61 @@
+import { Languages } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
+import type { Lang } from '../i18n/format'
+import { useLang } from '../i18n/LangProvider'
+import type { Dict } from '../i18n/ui'
 
-const TITLES: Record<string, string> = {
-  '/': 'Dashboard',
-  '/check-in': 'Daily check-in',
-  '/trends': 'Trends',
-  '/body-map': 'Body map',
-  '/about': 'About',
+const TITLE_KEYS: Record<string, keyof Dict['nav']> = {
+  '/': 'dashboard',
+  '/check-in': 'checkIn',
+  '/trends': 'trends',
+  '/body-map': 'bodyMap',
+  '/about': 'about',
 }
+
+/** Each language is named in that language, as language pickers usually do. */
+const LANGUAGE_NAMES: Record<Lang, string> = { en: 'English', 'pt-BR': 'Português (Brasil)' }
 
 const navLink = ({ isActive }: { isActive: boolean }) =>
   `rounded-md px-3 py-2 text-sm font-medium ${
     isActive ? 'bg-raised text-ink' : 'text-muted hover:text-ink'
   }`
 
+function LanguageSelect() {
+  const { lang, setLang, t } = useLang()
+  return (
+    <label className="flex items-center gap-1.5 text-sm text-muted">
+      <Languages aria-hidden="true" size={16} strokeWidth={2} />
+      <span className="sr-only">{t.language.label}</span>
+      <select
+        value={lang}
+        onChange={(e) => setLang(e.target.value as Lang)}
+        className="rounded-md border border-control bg-space px-2 py-1 text-ink"
+      >
+        {(Object.keys(LANGUAGE_NAMES) as Lang[]).map((l) => (
+          <option key={l} value={l} lang={l}>
+            {LANGUAGE_NAMES[l]}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
 export default function Layout() {
+  const { t } = useLang()
   const { pathname } = useLocation()
   const main = useRef<HTMLElement>(null)
   const firstRender = useRef(true)
 
-  // Each screen gets its own title. After navigating, focus moves to the main
-  // content so keyboard and screen reader users start on the new screen.
+  // Each screen gets its own title, in the chosen language.
   useEffect(() => {
-    document.title = `${TITLES[pathname] ?? 'Dashboard'} · CrewVitals`
+    document.title = `${t.nav[TITLE_KEYS[pathname] ?? 'dashboard']} · CrewVitals`
+  }, [pathname, t])
+
+  // After navigating, focus moves to the main content so keyboard and screen
+  // reader users start on the new screen.
+  useEffect(() => {
     if (firstRender.current) firstRender.current = false
     else main.current?.focus()
   }, [pathname])
@@ -33,25 +66,28 @@ export default function Layout() {
         href="#main"
         className="sr-only rounded-md bg-accent px-4 py-2 font-semibold text-space focus:not-sr-only focus:absolute focus:top-2 focus:left-4 focus:z-10"
       >
-        Skip to main content
+        {t.skipToMain}
       </a>
       <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-line py-4">
-        <p className="font-display text-xl font-semibold tracking-wide">CrewVitals</p>
-        <nav aria-label="Main" className="flex flex-wrap gap-1">
+        <div className="flex items-center gap-4">
+          <p className="font-display text-xl font-semibold tracking-wide">CrewVitals</p>
+          <LanguageSelect />
+        </div>
+        <nav aria-label={t.nav.label} className="flex flex-wrap gap-1">
           <NavLink to="/" end className={navLink}>
-            Dashboard
+            {t.nav.dashboard}
           </NavLink>
           <NavLink to="/check-in" className={navLink}>
-            Daily check-in
+            {t.nav.checkIn}
           </NavLink>
           <NavLink to="/trends" className={navLink}>
-            Trends
+            {t.nav.trends}
           </NavLink>
           <NavLink to="/body-map" className={navLink}>
-            Body map
+            {t.nav.bodyMap}
           </NavLink>
           <NavLink to="/about" className={navLink}>
-            About
+            {t.nav.about}
           </NavLink>
         </nav>
       </header>
@@ -61,13 +97,11 @@ export default function Layout() {
       </main>
 
       <footer className="border-t border-line py-5 text-sm text-muted">
-        <p className="text-ink">This is a hackathon prototype, not a medical device.</p>
-        <p className="mt-1">
-          Your health entries stay in this browser. Nothing you enter is sent to a server.
-        </p>
+        <p className="text-ink">{t.footer.disclaimer}</p>
+        <p className="mt-1">{t.footer.privacy}</p>
         <p className="mt-1">
           <Link to="/about" className="text-accent underline">
-            About, data sources and AI use
+            {t.footer.aboutLink}
           </Link>
         </p>
       </footer>

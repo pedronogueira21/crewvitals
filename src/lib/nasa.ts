@@ -125,8 +125,9 @@ export function parseStudies(json: unknown, term: StudyKeyword): Studies {
       {
         accession,
         title,
-        organism: str(s?.['organism']) || 'Organism not stated',
-        projectType: str(s?.['Project Type']) || 'Study type not stated',
+        /** Empty when OSDR does not state it; the screen shows a translated "not stated". */
+        organism: str(s?.['organism']) ?? '',
+        projectType: str(s?.['Project Type']) ?? '',
         url: `https://osdr.nasa.gov/bio/repo/data/studies/${encodeURIComponent(accession)}`,
       },
     ]
@@ -194,7 +195,8 @@ export const HIGH_RATE = 100
 const CLUSTER_AREA = {
   lat: [-50, -5],
   lon: [-80, -10],
-  words: 'over southern South America and the nearby South Atlantic Ocean',
+  /** Translated on screen: "over southern South America and the nearby South Atlantic Ocean". */
+  area: 'southAmericaSouthAtlantic' as const,
   minShare: 0.9,
 }
 
@@ -204,7 +206,8 @@ export type HighRateCluster = {
   inside: number
   latRange: [number, number]
   lonRange: [number, number]
-  words?: string
+  /** Set only when at least minShare of the high readings fall inside the named area. */
+  area?: 'southAmericaSouthAtlantic'
 }
 
 export type EnvironmentDose = {
@@ -292,7 +295,7 @@ function highRateCluster(readings: Reading[]): HighRateCluster | null {
     inside,
     latRange: range(high.map((r) => r.lat!)),
     lonRange: range(high.map((r) => r.lon!)),
-    words: inside / high.length >= CLUSTER_AREA.minShare ? CLUSTER_AREA.words : undefined,
+    area: inside / high.length >= CLUSTER_AREA.minShare ? CLUSTER_AREA.area : undefined,
   }
 }
 

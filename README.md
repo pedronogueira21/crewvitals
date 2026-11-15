@@ -14,6 +14,7 @@ A web app that lets an astronaut on a long-duration mission self-assess their he
 - **Body map**: select a region to see its readings, how spaceflight affects it (paraphrased NASA statements with source links), and related NASA open-science studies.
 - **About**: disclaimer, every data source with its link and Live/Snapshot mode, and how AI was used.
 - **Load demo mission** fills 30 days of simulated crew data with a few deliberate anomalies. **Clear data** resets.
+- **Language**: English (default) or Brazilian Portuguese, chosen in the header and saved in the browser. A first visit is always in English. Proper names, OSDR study titles and units stay in English; numbers and dates follow the language.
 
 There is no login and no account. Health entries stay in the browser (localStorage) and are never sent to a server.
 
@@ -64,8 +65,9 @@ Cloudflare Pages, connected to this GitHub repository:
 
 ## Editing content
 
-- Thresholds, guidance, self-care steps and trend-alert texts: `src/content/indicators.ts`, the one place to edit them. Thresholds and guidance were reviewed by the team's biomedical engineer on 14 Nov 2026; any change needs the same review.
-- Spaceflight context: `src/content/evidence.json`. Render it as written; check every NASA statement against its source page.
+- Thresholds, guidance, self-care steps and trend-alert texts: `src/content/indicators.ts`, the one place to edit them. The English and Portuguese clinical text sit side by side there; the Portuguese strings are marked `PT REVIEW NEEDED`. Status rules do not depend on the language.
+- Screen text in both languages: `src/i18n/ui.ts`. A missing Portuguese string is a type error, and `src/i18n/i18n.test.ts` checks that every string exists in both languages, that clinical numbers are unchanged, and that the status rules give identical results in both. Thresholds and guidance were reviewed by the team's biomedical engineer on 14 Nov 2026; any change needs the same review.
+- Spaceflight context: `src/content/evidence.json`. Render it as written; check every NASA statement against its source page. Each English text has its Portuguese translation beside it (`textPt`, `labelPt`, `namePt`, `teamPt`), with the same source keys.
 - Body map figure: `src/assets/body.svg` can be replaced by another drawing without code changes, as long as it keeps the six region ids (`head`, `heart`, `abdomen`, `core`, `bones`, `whole-body`). The comment at the top of the file explains the rest.
 
 ## Use of AI
@@ -79,4 +81,5 @@ Cloudflare Pages, connected to this GitHub repository:
 - The browser-tab icon (`public/favicon.svg`, a pulse line crossing a ring) is an original mark drawn in code with AI assistance.
 - No images were generated with AI, and the app uses no NASA logos, insignia or mission patches.
 - Gemini (Google) was used by the team's biomedical engineer as an aid when reviewing the thresholds and guidance (review completed 14 Nov 2026).
+- The Brazilian Portuguese translation of the app, including the clinical text and the NASA paraphrases, was drafted with Claude. It has not been reviewed.
 - The app itself uses no AI: statuses, alerts and guidance come from fixed rules in `src/content/indicators.ts`.

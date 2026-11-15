@@ -6,22 +6,24 @@ import DataControls from '../components/DataControls'
 import IndicatorCard from '../components/IndicatorCard'
 import RadiationPanel from '../components/RadiationPanel'
 import SimulatedTag from '../components/SimulatedTag'
-import { ESCALATION, sourceOf } from '../content/evidence'
+import { ESCALATION, sourceOf, statementText } from '../content/evidence'
 import SpaceWeatherBanner from '../components/SpaceWeatherBanner'
 import StatusBadge from '../components/StatusBadge'
 import TrendAlerts from '../components/TrendAlerts'
 import UrgentNotice from '../components/UrgentNotice'
 import {
-  INDICATORS,
-  RED_TREND_OVERALL,
+  INDICATOR_IDS,
   type MissionSetting,
   guidanceFor,
   readIndicator,
+  redTrendOverall,
   worstStatus,
 } from '../content/indicators'
-import { formatDate, missionDayOn, todayISO } from '../lib/mission'
+import { useLang } from '../i18n/LangProvider'
+import { missionDayOn, todayISO } from '../lib/mission'
 import { trendAlerts } from '../lib/trends'
-import { useStore } from '../state/store'
+import { storeErrorText, useStore } from '../state/store'
+import type { StoreError } from '../state/store'
 
 const primaryButton =
   'inline-flex items-center rounded-md bg-accent px-4 py-2 text-sm font-semibold text-space hover:brightness-110'
@@ -31,6 +33,7 @@ const dateInput = 'rounded-md border border-control bg-space px-3 py-1.5 text-in
 
 export default function Dashboard() {
   const { entries, settings } = useStore()
+  const { t, lang, date } = useLang()
   const location = useLocation()
   const savedDay = (location.state as { savedDay?: number } | null)?.savedDay
 
@@ -38,10 +41,7 @@ export default function Dashboard() {
   const missionDay = missionDayOn(today, settings.missionStart)
   const latest = entries.at(-1)
 
-  const cards = INDICATORS.map((indicator) => ({
-    indicator,
-    reading: latest ? readIndicator(indicator.id, latest) : null,
-  }))
+  const cards = INDICATOR_IDS.map((id) => ({ id, reading: latest ? readIndicator(id, latest) : null }))
   const logged = cards.flatMap((c) => (c.reading ? [c.reading] : []))
   const outside = logged.filter((r) => r.status !== 'green').length
   const overall = worstStatus(logged.map((r) => r.status))
@@ -54,13 +54,13 @@ export default function Dashboard() {
     <div className="flex flex-col gap-8">
       {savedDay !== undefined && (
         <p role="status" className="rounded-md border border-line bg-raised px-4 py-2 text-sm">
-          Check-in saved for mission day {savedDay}.
+          {t.dashboard.saved(savedDay)}
         </p>
       )}
 
       <section aria-labelledby="mission-heading">
         <h1 id="mission-heading" className="font-display text-5xl font-semibold tabular-nums sm:text-6xl">
-          Mission day {missionDay}
+          {t.dashboard.missionDay(missionDay)}
         </h1>
         <MissionStart />
         <MissionSettingSelect />
@@ -70,48 +70,46 @@ export default function Dashboard() {
 
       <section aria-labelledby="overall-heading" className="rounded-lg bg-panel p-5">
         <h2 id="overall-heading" className="font-display text-lg font-semibold">
-          Overall status
+          {t.dashboard.overallHeading}
         </h2>
 
         {latest ? (
           <div className="mt-3 flex flex-col gap-3">
             <StatusBadge status={overall} large />
             <p>
-              {outside === 0
-                ? `All ${logged.length} logged indicators are within the reference range.`
-                : `${outside} of ${logged.length} logged indicators ${outside === 1 ? 'is' : 'are'} outside the reference range.`}
-              {notLogged > 0 && ` ${notLogged} not logged.`}
+              {outside === 0 ? t.dashboard.allIn(logged.length) : t.dashboard.someOut(outside, logged.length)}
+              {notLogged > 0 && t.dashboard.notLogged(notLogged)}
             </p>
             {urgent && <UrgentNotice />}
             {redTrends > 0 && (
               <p className="flex max-w-[70ch] items-start gap-2 rounded-md border border-alert px-3 py-2 font-semibold">
                 <OctagonAlert aria-hidden="true" size={20} strokeWidth={2.5} className="mt-0.5 shrink-0 text-alert" />
                 <span>
-                  {RED_TREND_OVERALL(redTrends, settings.setting)}{' '}
+                  {redTrendOverall(redTrends, settings.setting, lang)}{' '}
                   <a href="#trend-alerts-heading" className="text-accent underline">
-                    Go to trend alerts
+                    {t.dashboard.goToAlerts}
                   </a>
                 </span>
               </p>
             )}
             <p className="max-w-[70ch]">
-              {redTrends > 0 && <span className="font-semibold">Latest check-in: </span>}
-              {guidanceFor(logged, settings.setting)}
+              {redTrends > 0 && <span className="font-semibold">{t.dashboard.latestCheckIn}</span>}
+              {guidanceFor(logged, settings.setting, lang)}
             </p>
             <p className="text-sm text-muted">
-              From the check-in for mission day {latest.missionDay} ({formatDate(latest.date)}).
-              {latest.date !== today && ' Nothing is logged for today yet.'}
+              {t.dashboard.fromCheckIn(latest.missionDay, date(latest.date))}
+              {latest.date !== today && t.dashboard.nothingToday}
             </p>
             {latest.simulated && <SimulatedTag />}
             <Link to="/check-in" className={`${primaryButton} self-start`}>
-              {latest.date === today ? "Update today's check-in" : "Log today's check-in"}
+              {latest.date === today ? t.dashboard.updateToday : t.dashboard.logToday}
             </Link>
           </div>
         ) : (
           <div className="mt-3 flex flex-col gap-3">
-            <p>No check-ins yet. Log your first one to see your status here.</p>
+            <p>{t.dashboard.empty}</p>
             <Link to="/check-in" className={`${primaryButton} self-start`}>
-              Log today's check-in
+              {t.dashboard.logToday}
             </Link>
           </div>
         )}
@@ -121,13 +119,13 @@ export default function Dashboard() {
 
       <section aria-labelledby="indicators-heading">
         <h2 id="indicators-heading" className="font-display text-lg font-semibold">
-          Indicators
+          {t.dashboard.indicatorsHeading}
         </h2>
         <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {cards.map(({ indicator, reading }) => (
+          {cards.map(({ id, reading }) => (
             <IndicatorCard
-              key={indicator.id}
-              indicator={indicator}
+              key={id}
+              id={id}
               reading={reading}
               simulated={latest?.simulated ?? false}
               setting={settings.setting}
@@ -150,13 +148,14 @@ const DELAY_STATEMENT = ESCALATION.nasa.find((s) => /communication/i.test(s.text
 
 /** One line saying what the current mission setting changes. */
 function MissionSettingEffect({ setting }: { setting: MissionSetting }) {
-  if (setting === 'ISS') return <p className="basis-full text-sm">Standard guidance.</p>
+  const { t, lang } = useLang()
+  if (setting === 'ISS') return <p className="basis-full text-sm">{t.dashboard.settingIss}</p>
   if (setting === 'Lunar surface') {
     return (
       <p className="basis-full text-sm">
-        Standard guidance. No measured lunar-surface radiation data exists; see the{' '}
+        {t.dashboard.settingLunar}
         <a href="#radiation-heading" className="text-accent underline">
-          radiation panel
+          {t.dashboard.settingLunarLink}
         </a>
         .
       </p>
@@ -165,18 +164,19 @@ function MissionSettingEffect({ setting }: { setting: MissionSetting }) {
   const source = DELAY_STATEMENT && sourceOf(DELAY_STATEMENT)
   return (
     <div className="basis-full text-sm">
-      <p>Red alerts add a reminder that communication with the ground is delayed and the onboard procedure comes first.</p>
+      <p>{t.dashboard.settingMars}</p>
       {DELAY_STATEMENT && (
         <p className="mt-1 border-l-2 border-line pl-3">
-          <span className="text-muted">Paraphrased from NASA: </span>
-          {DELAY_STATEMENT.text}
+          <span className="text-muted">{t.nasaText.inlineLabel}</span>
+          {statementText(DELAY_STATEMENT, lang)}
           {source && (
             <>
               {' '}
-              <span className="text-muted">Source: </span>
-              <a href={source.url} target="_blank" rel="noopener noreferrer" className="text-accent underline">
+              <span className="text-muted">{t.nasaText.source} </span>
+              <a href={source.url} target="_blank" rel="noopener noreferrer" lang="en" className="text-accent underline">
                 {source.title}
               </a>
+              {t.nasaText.sourceSuffix}
             </>
           )}
         </p>
@@ -187,11 +187,12 @@ function MissionSettingEffect({ setting }: { setting: MissionSetting }) {
 
 function MissionSettingSelect() {
   const { settings, setMissionSetting } = useStore()
-  const [error, setError] = useState<string>()
+  const { t, date } = useLang()
+  const [error, setError] = useState<StoreError>()
   return (
     <div className="mt-3 flex flex-wrap items-center gap-3 text-muted">
       <label className="flex items-center gap-2">
-        Mission setting
+        {t.dashboard.settingLabel}
         <select
           value={settings.setting}
           onChange={(e) => {
@@ -201,14 +202,16 @@ function MissionSettingSelect() {
           className="rounded-md border border-control bg-space px-3 py-1.5 text-ink"
         >
           {MISSION_SETTINGS.map((s) => (
-            <option key={s}>{s}</option>
+            <option key={s} value={s}>
+              {t.dashboard.settingNames[s]}
+            </option>
           ))}
         </select>
       </label>
       <MissionSettingEffect setting={settings.setting} />
       {error && (
         <p role="alert" className="basis-full text-sm text-alert">
-          {error}
+          {storeErrorText(error, t, date)}
         </p>
       )}
     </div>
@@ -217,9 +220,10 @@ function MissionSettingSelect() {
 
 function MissionStart() {
   const { settings, setMissionStart } = useStore()
+  const { t, date } = useLang()
   const [editing, setEditing] = useState(false)
   const [value, setValue] = useState(settings.missionStart)
-  const [error, setError] = useState<string>()
+  const [error, setError] = useState<StoreError>()
 
   function submit(event: FormEvent) {
     event.preventDefault()
@@ -235,7 +239,7 @@ function MissionStart() {
   if (!editing) {
     return (
       <p className="mt-2 flex flex-wrap items-center gap-3 text-muted">
-        Mission started {formatDate(settings.missionStart)}
+        {t.dashboard.missionStarted(date(settings.missionStart))}
         <button
           type="button"
           className={quietButton}
@@ -244,7 +248,7 @@ function MissionStart() {
             setEditing(true)
           }}
         >
-          Change start date
+          {t.dashboard.changeStart}
         </button>
       </p>
     )
@@ -253,7 +257,7 @@ function MissionStart() {
   return (
     <form onSubmit={submit} className="mt-2 flex flex-wrap items-end gap-3">
       <label className="flex flex-col gap-1 text-sm text-muted">
-        Mission start date
+        {t.dashboard.startLabel}
         <input
           type="date"
           required
@@ -266,7 +270,7 @@ function MissionStart() {
         />
       </label>
       <button type="submit" className={quietButton}>
-        Save start date
+        {t.dashboard.saveStart}
       </button>
       <button
         type="button"
@@ -276,11 +280,11 @@ function MissionStart() {
           setError(undefined)
         }}
       >
-        Cancel
+        {t.dashboard.cancel}
       </button>
       {error && (
         <p id="mission-start-error" role="alert" className="basis-full text-sm text-alert">
-          {error}
+          {storeErrorText(error, t, date)}
         </p>
       )}
     </form>

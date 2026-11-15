@@ -1,5 +1,7 @@
 import { greenRange } from '../content/indicators'
 import type { ReadingPart } from '../content/indicators'
+import { num } from '../i18n/format'
+import { useLang } from '../i18n/LangProvider'
 import { STATUS_UI } from './StatusBadge'
 
 /**
@@ -8,11 +10,13 @@ import { STATUS_UI } from './StatusBadge'
  * green zone.
  */
 export default function RangeGauge({ part, showLabel }: { part: ReadingPart; showLabel: boolean }) {
+  const { t, c, lang } = useLang()
   const { measure, value, status } = part
   const { min, max } = measure.gauge
   const step = 10 ** -measure.decimals
   const pct = (n: number) => ((Math.min(Math.max(n, min), max) - min) / (max - min)) * 100
-  const f = (n: number) => n.toFixed(measure.decimals)
+  const f = (n: number) => num(n, lang, measure.decimals, false)
+  const { label, unit } = c.measures[measure.id]
 
   // Zone edges are drawn halfway between the last value of one zone and the
   // first value of the next.
@@ -25,15 +29,11 @@ export default function RangeGauge({ part, showLabel }: { part: ReadingPart; sho
 
   const green = greenRange(measure)
   const greenZone = zones.find((z) => z.status === 'green')!
-  const greenText =
-    green.high === undefined ? `${f(green.low)} or more` : `${f(green.low)} to ${f(green.high)}`
+  const greenText = green.high === undefined ? t.gauge.orMore(f(green.low)) : t.gauge.range(f(green.low), f(green.high))
 
   return (
-    <div
-      role="img"
-      aria-label={`${measure.label}: ${f(value)} ${measure.unit}, ${STATUS_UI[status].label}. Green zone: ${greenText}.`}
-    >
-      {showLabel && <p className="mb-1 text-xs text-muted">{measure.label}</p>}
+    <div role="img" aria-label={t.gauge.aria(label, f(value), unit, t.status[status], greenText)}>
+      {showLabel && <p className="mb-1 text-xs text-muted">{label}</p>}
       <div className="relative h-3">
         <div className="absolute inset-0 overflow-hidden rounded-sm bg-space">
           {zones.map((zone, i) => (
@@ -54,10 +54,7 @@ export default function RangeGauge({ part, showLabel }: { part: ReadingPart; sho
           {green.high === undefined ? `≥ ${f(green.low)}` : f(green.low)}
         </span>
         {green.high !== undefined && (
-          <span
-            className="absolute -translate-x-full"
-            style={{ left: `${greenZone.start + greenZone.width}%` }}
-          >
+          <span className="absolute -translate-x-full" style={{ left: `${greenZone.start + greenZone.width}%` }}>
             {f(green.high)}
           </span>
         )}

@@ -101,7 +101,7 @@ describe('RadLab', () => {
 
   it('ISS: high readings cluster and are named in plain words; other environments have no positions', () => {
     const iss = summarizeEnvironment(snapshot(radlabSnapshot('iss')), 'iss')
-    expect(iss.highRate?.words).toMatch(/South America/)
+    expect(iss.highRate?.area).toBe('southAmericaSouthAtlantic')
     expect(iss.highRate!.inside / iss.highRate!.count).toBeGreaterThanOrEqual(0.9)
     expect(summarizeEnvironment(snapshot(radlabSnapshot('mars-orbit')), 'mars-orbit').highRate).toBeNull()
   })

@@ -26,12 +26,3 @@ export function missionDayOn(date: string, missionStart: string): number {
 export function addDays(iso: string, days: number): string {
   return new Date(toUTC(iso) + days * 86_400_000).toISOString().slice(0, 10)
 }
-
-export function formatDate(iso: string): string {
-  return new Date(toUTC(iso)).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    timeZone: 'UTC',
-  })
-}

@@ -1,34 +1,32 @@
 import { OctagonAlert, Sun } from 'lucide-react'
+import { useLang } from '../i18n/LangProvider'
+import type { Dict } from '../i18n/ui'
 import { useSpaceWeather } from '../lib/api'
-import { formatDate } from '../lib/mission'
 import type { SpaceWeatherEvent } from '../lib/nasa'
-import DataModeTag, { formatUtc } from './DataModeTag'
+import DataModeTag from './DataModeTag'
 
 const DONKI_HOME = 'https://ccmc.gsfc.nasa.gov/DONKI/'
 
-function eventText(e: SpaceWeatherEvent): string {
-  return e.kind === 'sep'
-    ? `Solar energetic particle event, ${formatUtc(e.time)}`
-    : `${e.classType} solar flare, peak ${formatUtc(e.time)}`
+function eventText(e: SpaceWeatherEvent, t: Dict, utc: (iso: string) => string): string {
+  return e.kind === 'sep' ? t.spaceWeather.sep(utc(e.time)) : t.spaceWeather.flare(e.classType ?? '', utc(e.time))
 }
 
 /** Dashboard banner from DONKI (SPEC 6.1). */
 export default function SpaceWeatherBanner() {
   const loaded = useSpaceWeather()
+  const { t, date, utc } = useLang()
 
   if (loaded.state !== 'ready') {
     return (
       <p className="rounded-lg border border-line px-4 py-3 text-sm text-muted">
-        {loaded.state === 'loading' ? 'Loading space weather…' : 'Space weather data is unavailable right now.'}
+        {loaded.state === 'loading' ? t.spaceWeather.loading : t.spaceWeather.unavailable}
       </p>
     )
   }
 
   const { mode, retrieved, data } = loaded.result
   const period =
-    mode === 'live'
-      ? 'in the last 7 days'
-      : `from ${formatDate(data.window.start)} to ${formatDate(data.window.end)}`
+    mode === 'live' ? t.spaceWeather.lastWeek : t.spaceWeather.between(date(data.window.start), date(data.window.end))
   const alert = data.alerts.length > 0
 
   return (
@@ -43,23 +41,23 @@ export default function SpaceWeatherBanner() {
           ) : (
             <Sun aria-hidden="true" size={20} strokeWidth={2.25} className="text-muted" />
           )}
-          {alert ? 'Space weather alert' : `No major space weather events ${period}`}
+          {alert ? t.spaceWeather.alertTitle : t.spaceWeather.noneTitle(period)}
         </h2>
         <DataModeTag mode={mode} retrieved={retrieved} />
       </div>
 
       {alert ? (
         <>
-          <p className="text-sm text-muted">Events {period}:</p>
+          <p className="text-sm text-muted">{t.spaceWeather.events(period)}</p>
           <ul className="flex flex-col gap-1">
             {data.alerts.map((e) => (
               <li key={`${e.kind}-${e.time}`}>
-                {eventText(e)}
+                {eventText(e, t, utc)}
                 {e.link && (
                   <>
                     {' '}
                     <a href={e.link} target="_blank" rel="noopener noreferrer" className="text-accent underline">
-                      DONKI event page
+                      {t.spaceWeather.eventPage}
                     </a>
                   </>
                 )}
@@ -71,21 +69,21 @@ export default function SpaceWeatherBanner() {
         <p className="text-sm">
           {data.latestFlare ? (
             <>
-              Most recent flare: {eventText(data.latestFlare)}.{' '}
+              {t.spaceWeather.latest(eventText(data.latestFlare, t, utc))}{' '}
               {data.latestFlare.link && (
                 <a href={data.latestFlare.link} target="_blank" rel="noopener noreferrer" className="text-accent underline">
-                  DONKI event page
+                  {t.spaceWeather.eventPage}
                 </a>
               )}
             </>
           ) : (
-            'No solar flares were reported.'
+            t.spaceWeather.noFlares
           )}
         </p>
       )}
 
       <p className="text-xs text-muted">
-        An alert means a solar energetic particle event or an X-class flare. Space weather data:{' '}
+        {t.spaceWeather.explain}
         <a href={DONKI_HOME} target="_blank" rel="noopener noreferrer" className="text-accent underline">
           NASA CCMC DONKI
         </a>
